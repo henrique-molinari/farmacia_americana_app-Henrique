@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:farmacia_app/app/app_routes.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
+import 'package:farmacia_app/features/attendant/home_attendant/data/mocks/mock_attendant_notifications.dart';
+import 'package:farmacia_app/features/attendant/home_attendant/data/models/attendant_notification_model.dart';
 
 class AttendantNotificationsScreen extends StatelessWidget {
   const AttendantNotificationsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final notifications = MockAttendantNotifications.getNotifications();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
@@ -18,7 +22,7 @@ class AttendantNotificationsScreen extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Notificações',
+          'Notifica\u00e7\u00f5es',
           style: TextStyle(
             color: Color(0xFF151515),
             fontWeight: FontWeight.w700,
@@ -48,7 +52,7 @@ class AttendantNotificationsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'PRIORIDADE MÁXIMA',
+                'PRIORIDADE M\u00c1XIMA',
                 style: TextStyle(
                   color: Pallete.primaryRed,
                   fontWeight: FontWeight.w700,
@@ -66,33 +70,28 @@ class AttendantNotificationsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              const _UrgentCard(
-                icon: Icons.error,
-                iconBackground: Color(0xFFFDE8E8),
-                iconColor: Pallete.primaryRed,
-                timeLabel: 'AGORA',
-                title: 'Ruptura de Estoque',
-                description:
-                    'Insulina Glargina atingiu nível crítico na Unidade 01. Reposição imediata necessária.',
-              ),
-              const SizedBox(height: 16),
-              _UrgentCard(
-                icon: Icons.message,
-                iconBackground: const Color(0xFFFDE8E8),
-                iconColor: Pallete.primaryRed,
-                timeLabel: 'AGORA',
-                title: 'Nova Mensagem de Cliente',
-                description:
-                    'Mariana Silva enviou uma nova mensagem sobre o seu pedido em andamento.',
-                actionLabel: 'Responder',
-                onActionPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.attendantChatDetail,
-                    arguments: 'client-1',
-                  );
-                },
-              ),
+              ...notifications.asMap().entries.map((entry) {
+                final index = entry.key;
+                final notification = entry.value;
+
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index == notifications.length - 1 ? 0 : 16,
+                  ),
+                  child: _UrgentCard(
+                    notification: notification,
+                    onActionPressed: notification.chatId == null
+                        ? null
+                        : () {
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.attendantChatDetail,
+                              arguments: notification.chatId,
+                            );
+                          },
+                  ),
+                );
+              }),
             ],
           ),
         ),
@@ -102,25 +101,10 @@ class AttendantNotificationsScreen extends StatelessWidget {
 }
 
 class _UrgentCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconBackground;
-  final Color iconColor;
-  final String timeLabel;
-  final String title;
-  final String description;
-  final String? actionLabel;
+  final AttendantNotification notification;
   final VoidCallback? onActionPressed;
 
-  const _UrgentCard({
-    required this.icon,
-    required this.iconBackground,
-    required this.iconColor,
-    required this.timeLabel,
-    required this.title,
-    required this.description,
-    this.actionLabel,
-    this.onActionPressed,
-  });
+  const _UrgentCard({required this.notification, this.onActionPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -151,14 +135,14 @@ class _UrgentCard extends StatelessWidget {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: iconBackground,
+                    color: notification.iconBackground,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icon, color: iconColor),
+                  child: Icon(notification.icon, color: notification.iconColor),
                 ),
                 const Spacer(),
                 Text(
-                  timeLabel,
+                  notification.timeLabel,
                   style: const TextStyle(
                     color: Color(0xFFB0A3A3),
                     fontWeight: FontWeight.w700,
@@ -168,7 +152,7 @@ class _UrgentCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              title,
+              notification.title,
               style: const TextStyle(
                 color: Color(0xFF151515),
                 fontWeight: FontWeight.w800,
@@ -177,14 +161,15 @@ class _UrgentCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              description,
+              notification.description,
               style: const TextStyle(
                 color: Color(0xFF3D2B2B),
                 height: 1.4,
                 fontSize: 18,
               ),
             ),
-            if (actionLabel != null && onActionPressed != null) ...[
+            if (notification.actionLabel != null &&
+                onActionPressed != null) ...[
               const SizedBox(height: 18),
               SizedBox(
                 width: double.infinity,
@@ -200,7 +185,7 @@ class _UrgentCard extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    actionLabel!,
+                    notification.actionLabel!,
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 16,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:farmacia_app/app/app_routes.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view_model/attendant_profile_data_store.dart';
+import 'package:farmacia_app/features/auth/view_models/auth_session_view_model.dart';
+import 'package:provider/provider.dart';
 
 class AttendantProfileScreen extends StatefulWidget {
   const AttendantProfileScreen({super.key});
@@ -13,6 +15,16 @@ class AttendantProfileScreen extends StatefulWidget {
 class _AttendantProfileScreenState extends State<AttendantProfileScreen> {
   final AttendantProfileDataStore _profileStore =
       AttendantProfileDataStore.instance;
+
+  Future<void> _logout() async {
+    await context.read<AuthSessionViewModel>().signOut();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.welcome,
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,7 +170,7 @@ class _AttendantProfileScreenState extends State<AttendantProfileScreen> {
                   ),
                   const SizedBox(height: 34),
                   TextButton.icon(
-                    onPressed: () {},
+                    onPressed: () => _logout(),
                     icon: const Icon(
                       Icons.logout_rounded,
                       color: Pallete.primaryRed,

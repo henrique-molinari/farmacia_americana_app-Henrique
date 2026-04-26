@@ -124,7 +124,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
               alignment: Alignment.centerLeft,
               child: Text(
                 '${products.length} produtos',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   color: Pallete.textColor,
                 ),

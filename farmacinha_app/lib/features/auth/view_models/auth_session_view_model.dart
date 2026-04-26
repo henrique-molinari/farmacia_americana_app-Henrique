@@ -1,6 +1,7 @@
 import 'package:farmacia_app/app/app_routes.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
 import 'package:farmacia_app/features/auth/data/models/user_model.dart';
+import 'package:farmacia_app/features/auth/data/repositories/auth_repository.dart';
 import 'package:flutter/material.dart';
 
 class AuthSessionViewModel extends ChangeNotifier {
@@ -31,6 +32,29 @@ class AuthSessionViewModel extends ChangeNotifier {
     _currentUser = null;
     _isGuest = false;
     notifyListeners();
+  }
+
+  Future<User?> restoreSession() async {
+    try {
+      final restoredUser = await AuthRepository.instance.getCurrentUser();
+      _currentUser = restoredUser;
+      _isGuest = false;
+      notifyListeners();
+      return restoredUser;
+    } catch (_) {
+      _currentUser = null;
+      _isGuest = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<void> signOut() async {
+    try {
+      await AuthRepository.instance.signOut();
+    } finally {
+      logout();
+    }
   }
 
   bool requireAuthentication(

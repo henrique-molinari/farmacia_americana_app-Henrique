@@ -189,7 +189,7 @@ class NotificationsBottomSheet extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             notification['description']!,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12,
                               color: Pallete.textColor,
                               fontWeight: FontWeight.w500,

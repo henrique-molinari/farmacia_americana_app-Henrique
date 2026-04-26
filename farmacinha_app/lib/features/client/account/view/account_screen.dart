@@ -140,10 +140,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   child: const Text(
                     'Fazer login',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -194,10 +191,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 height: 72,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Pallete.accentYellow,
-                    width: 2.5,
-                  ),
+                  border: Border.all(color: Pallete.accentYellow, width: 2.5),
                 ),
                 child: ClipOval(
                   child: Container(
@@ -317,7 +311,9 @@ class _AccountScreenState extends State<AccountScreen> {
                 subtitle: 'Edite suas informações de perfil',
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const PersonalDataScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const PersonalDataScreen(),
+                    ),
                   );
                 },
               ),
@@ -385,11 +381,7 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
             const SizedBox(width: 12),
             // Botão Sair
-            Expanded(
-              child: _LogoutTile(
-                onTap: () => _showLogoutDialog(),
-              ),
-            ),
+            Expanded(child: _LogoutTile(onTap: () => _showLogoutDialog())),
           ],
         ),
       ],
@@ -417,9 +409,9 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              viewModel.logout(context);
+              await viewModel.logout(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Pallete.primaryRed,
@@ -559,9 +551,7 @@ class _LogoutTileState extends State<_LogoutTile> {
           decoration: BoxDecoration(
             color: Pallete.primaryRed.withOpacity(0.04),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: Pallete.primaryRed.withOpacity(0.15),
-            ),
+            border: Border.all(color: Pallete.primaryRed.withOpacity(0.15)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,103 +1,90 @@
-import 'package:flutter/material.dart';
-import 'package:farmacia_app/app/app_routes.dart';
-import 'package:farmacia_app/features/auth/data/mocks/mock_users.dart';
-import 'package:farmacia_app/features/auth/data/models/user_model.dart';
+import 'package:farmacia_app/features/auth/data/repositories/auth_repository.dart';
+import 'package:farmacia_app/features/auth/utils/auth_route_resolver.dart';
 import 'package:farmacia_app/features/auth/view_models/auth_session_view_model.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class LoginViewModel extends ChangeNotifier {
-  // Controles dos campos de texto
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   bool _isRememberMe = false;
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
-  // Getters
   bool get isRememberMe => _isRememberMe;
   bool get obscurePassword => _obscurePassword;
+  bool get isLoading => _isLoading;
 
-  // Alternar "Salvar Login"
   void toggleRememberMe(bool? value) {
     _isRememberMe = value ?? false;
     notifyListeners();
   }
 
-  // Alternar visibilidade da senha
   void togglePasswordVisibility() {
     _obscurePassword = !_obscurePassword;
     notifyListeners();
   }
 
-  /// Método principal de Login
   Future<void> login(BuildContext context) async {
     final emailInput = emailController.text.trim().toLowerCase();
     final passwordInput = passwordController.text.trim();
 
-    debugPrint('--- TENTATIVA DE LOGIN ---');
-    debugPrint("Email digitado: '$emailInput'");
-    debugPrint("Senha digitada: '$passwordInput'");
-
-    final users = MockUsers.getUsers();
-    User? authenticatedUser;
-
-    for (final user in users) {
-      if (user.email.toLowerCase() == emailInput &&
-          user.password == passwordInput) {
-        authenticatedUser = user;
-        break;
-      }
-    }
-
-    if (authenticatedUser == null) {
-      debugPrint('ERRO: Usuário não encontrado ou credenciais incorretas.');
-      _showErrorSnackBar(context, 'E-mail ou senha inválidos!');
+    if (emailInput.isEmpty || passwordInput.isEmpty) {
+      _showErrorSnackBar(context, 'Preencha e-mail e senha para continuar.');
       return;
     }
 
-    debugPrint(
-      'Usuário encontrado: ${authenticatedUser.name} | Role: ${authenticatedUser.role}',
-    );
+    _isLoading = true;
+    notifyListeners();
 
     try {
-      context.read<AuthSessionViewModel>().login(authenticatedUser);
-
-      if (authenticatedUser.role == UserRole.cliente) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.homeClient,
-          (route) => false,
-        );
-      } else if (authenticatedUser.role == UserRole.atendente) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.homeAttendant,
-          (route) => false,
-        );
-      } else if (authenticatedUser.role == UserRole.gerente) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.homeManager,
-          (route) => false,
-        );
-      } else {
-        _showErrorSnackBar(
-          context,
-          'Acesso para ${authenticatedUser.role.name.toUpperCase()} em desenvolvimento!',
-          isWarning: true,
-        );
-      }
-    } catch (e, s) {
-      debugPrint('ERRO DE NAVEGAÇÃO: $e');
-      debugPrint('$s');
-      _showErrorSnackBar(
-        context,
-        'Falha ao abrir a tela do perfil ${authenticatedUser.role.name}.',
+      final authenticatedUser = await AuthRepository.instance.signIn(
+        email: emailInput,
+        password: passwordInput,
       );
+
+      if (!context.mounted) return;
+
+      context.read<AuthSessionViewModel>().login(authenticatedUser);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        resolveHomeRoute(authenticatedUser.role),
+        (route) => false,
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Erro ao fazer login: $error');
+      debugPrint('$stackTrace');
+      if (!context.mounted) return;
+      _showErrorSnackBar(context, _formatAuthError(error));
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
-  // Helper para mostrar mensagens de erro/aviso
+  String _formatAuthError(Object error) {
+    final message = error.toString();
+
+    if (message.contains('Invalid login credentials')) {
+      return 'E-mail ou senha invalidos.';
+    }
+
+    if (message.contains('Email not confirmed')) {
+      return 'Confirme seu e-mail antes de entrar.';
+    }
+
+    if (message.contains('row-level security')) {
+      return 'A policy do Supabase bloqueou o acesso ao perfil do usuario.';
+    }
+
+    if (message.startsWith('Exception: ')) {
+      return message.replaceFirst('Exception: ', '');
+    }
+
+    return 'Nao foi possivel fazer login agora. Detalhe: $message';
+  }
+
   void _showErrorSnackBar(
     BuildContext context,
     String message, {

@@ -1,22 +1,27 @@
-import 'package:flutter/material.dart';
-import 'package:farmacia_app/features/client/home_client/data/mocks/mock_products.dart';
-import 'package:farmacia_app/features/client/home_client/data/mocks/mock_categories.dart';
-import 'package:farmacia_app/features/client/home_client/data/models/banner_model.dart';
-import 'package:farmacia_app/features/client/home_client/data/mocks/mock_banners.dart';
-import 'package:farmacia_app/features/client/cart/view_model/cart_view_model.dart';
-import 'package:farmacia_app/features/client/home_client/data/models/product_model.dart';
-import 'package:farmacia_app/features/client/home_client/data/models/category_model.dart';
 import 'package:farmacia_app/features/auth/view_models/auth_session_view_model.dart';
+import 'package:farmacia_app/features/client/cart/view_model/cart_view_model.dart';
+import 'package:farmacia_app/features/client/home_client/data/mocks/mock_banners.dart';
+import 'package:farmacia_app/features/client/home_client/data/models/banner_model.dart';
+import 'package:farmacia_app/features/client/home_client/data/models/category_model.dart';
+import 'package:farmacia_app/features/client/home_client/data/models/product_model.dart';
+import 'package:farmacia_app/features/client/home_client/data/repositories/products_repository.dart';
+import 'package:flutter/material.dart';
 
 class HomeClientViewModel extends ChangeNotifier {
+  HomeClientViewModel({AuthSessionViewModel? authSession})
+    : _authSession = authSession ?? AuthSessionViewModel.instance {
+    _banners = MockBanners.getBanners();
+    searchController.addListener(_onSearchChanged);
+    refreshProducts();
+  }
+
   final AuthSessionViewModel _authSession;
 
-  // ===== DADOS PRIVADOS =====
   List<Product> _allProducts = [];
   List<Product> _filteredProducts = [];
   List<Category> _categories = [];
   List<BannerModel> _banners = [];
-  
+
   String _selectedCategoryId = '';
   String _searchQuery = '';
   bool _isLoading = false;
@@ -24,7 +29,6 @@ class HomeClientViewModel extends ChangeNotifier {
 
   final TextEditingController searchController = TextEditingController();
 
-  // ===== GETTERS =====
   List<Product> get filteredProducts => _filteredProducts;
   List<Category> get categories => _categories;
   List<BannerModel> get banners => _banners;
@@ -34,40 +38,31 @@ class HomeClientViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isGuest => _authSession.isGuest || !_authSession.isAuthenticated;
 
-  // ===== CONSTRUTOR =====
-  HomeClientViewModel({AuthSessionViewModel? authSession})
-      : _authSession = authSession ?? AuthSessionViewModel.instance {
-    _initializeHome();
-    searchController.addListener(_onSearchChanged);
-  }
-
-  // ===== MÉTODOS PRIVADOS =====
-
-  void _initializeHome() {
+  Future<void> refreshProducts() async {
     _setLoading(true);
     _errorMessage = null;
 
-    // Simula o tempo de resposta de uma API
-    Future.delayed(const Duration(milliseconds: 800), () {
-      try {
-        _allProducts = MockProducts.getProducts();
-        _categories = MockCategories.getCategories();
-        _banners = MockBanners.getBanners();
-        _filteredProducts = _allProducts;
-        _setLoading(false);
-      } catch (e) {
-        _errorMessage = "Erro ao carregar dados da farmácia.";
-        _setLoading(false);
-      }
-    });
+    try {
+      _allProducts = await ProductsRepository.instance.fetchActiveProducts();
+      _categories = _buildCategories(_allProducts);
+      _applyFilters(notify: false);
+    } catch (error) {
+      debugPrint('Erro ao carregar produtos do Supabase: $error');
+      _errorMessage = 'Erro ao carregar dados da farmacia.';
+      _allProducts = [];
+      _filteredProducts = [];
+      _categories = _buildCategories(<Product>[]);
+    } finally {
+      _setLoading(false);
+    }
   }
-  
+
   void _onSearchChanged() {
     _searchQuery = searchController.text;
     _applyFilters();
   }
 
-  void _applyFilters() {
+  void _applyFilters({bool notify = true}) {
     _filteredProducts = _allProducts.where((product) {
       final categoryMatch =
           _selectedCategoryId.isEmpty ||
@@ -81,15 +76,68 @@ class HomeClientViewModel extends ChangeNotifier {
       return categoryMatch && searchMatch;
     }).toList();
 
-    notifyListeners();
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  List<Category> _buildCategories(List<Product> products) {
+    final categoryMap = <String, int>{};
+    for (final product in products) {
+      categoryMap[product.category] = (categoryMap[product.category] ?? 0) + 1;
+    }
+
+    final categories = <Category>[
+      Category(
+        id: 'all',
+        name: 'Todos',
+        icon: Icons.apps_rounded,
+        productCount: products.length,
+      ),
+    ];
+
+    final iconMap = <String, IconData>{
+      'medicamentos': Icons.healing_rounded,
+      'higiene': Icons.soap_rounded,
+      'beleza': Icons.spa_rounded,
+      'suplementos': Icons.favorite_rounded,
+      'vitaminas': Icons.energy_savings_leaf_rounded,
+      'controlados': Icons.local_hospital_rounded,
+    };
+
+    final nameMap = <String, String>{
+      'medicamentos': 'Medicamentos',
+      'higiene': 'Higiene',
+      'beleza': 'Beleza',
+      'suplementos': 'Suplementos',
+      'vitaminas': 'Vitaminas',
+      'controlados': 'Controlados',
+    };
+
+    final sortedKeys = categoryMap.keys.toList()..sort();
+    for (final key in sortedKeys) {
+      categories.add(
+        Category(
+          id: key,
+          name: nameMap[key] ?? _capitalize(key),
+          icon: iconMap[key] ?? Icons.category_rounded,
+          productCount: categoryMap[key] ?? 0,
+        ),
+      );
+    }
+
+    return categories;
+  }
+
+  String _capitalize(String value) {
+    if (value.isEmpty) return value;
+    return '${value[0].toUpperCase()}${value.substring(1)}';
   }
 
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
   }
-
-  // ===== MÉTODOS PÚBLICOS =====
 
   void selectCategory(String categoryId) {
     _selectedCategoryId = categoryId;
@@ -123,13 +171,12 @@ class HomeClientViewModel extends ChangeNotifier {
     return _authSession.requireAuthentication(context, message: message);
   }
 
-  // Este método pode ser usado para Analytics ou logs antes da navegação
   void viewProductDetail(Product product) {
-    debugPrint('Usuário visualizando detalhes de: ${product.name}');
+    debugPrint('Usuario visualizando detalhes de: ${product.name}');
   }
 
   List<Product> getPromotionalProducts() {
-    return _allProducts.where((p) => p.isOnPromotion).toList().take(5).toList();
+    return _allProducts.where((p) => p.isOnPromotion).take(5).toList();
   }
 
   @override

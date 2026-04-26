@@ -184,7 +184,7 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
               alignment: Alignment.centerLeft,
               child: Text(
                 '${orders.length} pedidos',
-                style: TextStyle(fontSize: 13, color: Pallete.textColor),
+                style: const TextStyle(fontSize: 13, color: Pallete.textColor),
               ),
             ),
           ),

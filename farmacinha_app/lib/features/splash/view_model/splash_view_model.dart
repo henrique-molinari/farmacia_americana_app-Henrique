@@ -1,15 +1,19 @@
-import 'package:flutter/material.dart';
 import 'package:farmacia_app/app/app_routes.dart';
+import 'package:farmacia_app/features/auth/utils/auth_route_resolver.dart';
+import 'package:farmacia_app/features/auth/view_models/auth_session_view_model.dart';
+import 'package:flutter/material.dart';
 
 class SplashViewModel extends ChangeNotifier {
-  /// Gerencia a inicialização do app e navega para a próxima tela
   Future<void> initializeApp(BuildContext context) async {
-    // Simula o tempo de exibição da logo ou carregamento de dados/login
-    await Future.delayed(const Duration(seconds: 3));
+    await Future<void>.delayed(const Duration(seconds: 3));
+
+    final restoredUser = await AuthSessionViewModel.instance.restoreSession();
+    final nextRoute = restoredUser == null
+        ? AppRoutes.welcome
+        : resolveHomeRoute(restoredUser.role);
 
     if (context.mounted) {
-      // Por enquanto, o destino padrão é a WelcomeScreen
-      Navigator.of(context).pushReplacementNamed(AppRoutes.welcome);
+      Navigator.of(context).pushReplacementNamed(nextRoute);
     }
   }
 }

@@ -224,7 +224,7 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Pallete.grayColor,
                     shape: BoxShape.circle,
                   ),
@@ -245,7 +245,7 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
                     ),
                   ),
                 ),
-                Text(
+                const Text(
                   'v1.0.0',
                   style: TextStyle(
                     fontSize: 13,
@@ -302,7 +302,7 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
                     ),
                     Text(
                       subtitle,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 11,
                         color: Pallete.textColor,
                       ),

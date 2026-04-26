@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:farmacia_app/core/palette/pallete.dart';
 import 'package:farmacia_app/core/widgets/gradient_button.dart';
-import 'package:farmacia_app/core/widgets/social_button.dart';
 import 'package:farmacia_app/core/widgets/login_field.dart';
 import 'package:farmacia_app/core/widgets/password_field.dart';
-import 'package:farmacia_app/core/palette/pallete.dart';
+import 'package:farmacia_app/core/widgets/social_button.dart';
 import 'package:farmacia_app/features/auth/view_models/register_view_model.dart';
+import 'package:flutter/material.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -50,38 +50,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   const SizedBox(height: 40),
-
-                  // Campo de Nome
                   LoginField(
                     hintText: 'Nome completo',
                     controller: viewModel.nameController,
                   ),
                   const SizedBox(height: 16),
-
-                  // Campo de Email
                   LoginField(
                     hintText: 'Email',
                     controller: viewModel.emailController,
                   ),
                   const SizedBox(height: 16),
-
-                  // Campo de Senha
                   PasswordField(
                     controller: viewModel.passwordController,
                     obscureText: viewModel.obscurePassword,
                     onToggleVisibility: viewModel.togglePasswordVisibility,
                   ),
                   const SizedBox(height: 16),
-
-                  // NOVO: Confirmar Senha
                   PasswordField(
                     controller: viewModel.confirmPasswordController,
                     obscureText: viewModel.obscureConfirm,
                     onToggleVisibility: viewModel.toggleConfirmVisibility,
-                    // Note: Você pode passar um hintText diferente se seu PasswordField permitir
                   ),
-
-                  // NOVO: Checkbox de Termos de Uso
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 35,
@@ -113,7 +102,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () => debugPrint("Abrir termos de uso"),
+                          onTap: () => debugPrint('Abrir termos de uso'),
                           child: const Text(
                             'termos de uso',
                             style: TextStyle(
@@ -127,12 +116,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // Botão de Cadastro
-                  GradientButton(onPressed: () => viewModel.register()),
-
+                  GradientButton(
+                    label: 'Criar conta',
+                    onPressed: viewModel.isLoading
+                        ? null
+                        : () => viewModel.register(context),
+                  ),
                   const SizedBox(height: 40),
                   const Text(
                     'ou',
@@ -142,15 +132,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Botões Sociais Padronizados (Nomes de assets corrigidos)
                   SocialButton(
                     iconName: 'g_logo',
                     label: 'Cadastrar com Google',
                     iconColor: Pallete.googleLogo,
                     textColor: Pallete.textColor,
                     horizontalPadding: 80.0,
-                    onPressed: () => viewModel.registerWithGoogle(),
+                    onPressed: viewModel.registerWithGoogle,
                   ),
                   const SizedBox(height: 20),
                   SocialButton(
@@ -158,7 +146,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     label: 'Cadastrar com Facebook',
                     iconColor: Pallete.facebookLogo,
                     textColor: Pallete.textColor,
-                    onPressed: () => viewModel.registerWithFacebook(),
+                    onPressed: viewModel.registerWithFacebook,
                   ),
                   const SizedBox(height: 25),
                 ],

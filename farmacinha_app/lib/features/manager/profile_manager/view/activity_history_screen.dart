@@ -304,7 +304,7 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
                 // Contagem
                 Text(
                   '${activities.length} atividades registradas',
-                  style: TextStyle(fontSize: 13, color: Pallete.textColor),
+                  style: const TextStyle(fontSize: 13, color: Pallete.textColor),
                 ),
               ],
             ),

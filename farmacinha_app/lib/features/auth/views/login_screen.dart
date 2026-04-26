@@ -78,7 +78,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Checkbox(
                             side: const BorderSide(color: Pallete.borderColor),
                             value: viewModel.isRememberMe,
-                            activeColor: const Color.fromARGB(255, 233, 206, 120),
+                            activeColor: const Color.fromARGB(
+                              255,
+                              233,
+                              206,
+                              120,
+                            ),
                             onChanged: viewModel.toggleRememberMe,
                           ),
                         ),
@@ -95,10 +100,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   const SizedBox(height: 30),
-                  
+
                   // Botão de Login chamando o método com o context
                   GradientButton(
-                    onPressed: () => viewModel.login(context),
+                    onPressed: viewModel.isLoading
+                        ? null
+                        : () => viewModel.login(context),
                   ),
 
                   const SizedBox(height: 52),

@@ -148,11 +148,11 @@ class OrderConfirmationScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 34),
-            Opacity(
+            const Opacity(
               opacity: 0.36,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
+                children: [
                   _BrandDash(color: Color(0xFFE8B5BF)),
                   SizedBox(width: 10),
                   Text(
@@ -181,20 +181,20 @@ class OrderConfirmationScreen extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Positioned(
+          const Positioned(
             top: 24,
             left: 50,
-            child: _FloatingDot(color: const Color(0xFFB3A258), size: 20),
+            child: _FloatingDot(color: Color(0xFFB3A258), size: 20),
           ),
-          Positioned(
+          const Positioned(
             top: 140,
             right: 0,
-            child: _FloatingDot(color: const Color(0xFF7EB7DD), size: 16),
+            child: _FloatingDot(color: Color(0xFF7EB7DD), size: 16),
           ),
-          Positioned(
+          const Positioned(
             bottom: 58,
             right: 28,
-            child: _FloatingDot(color: const Color(0xFFFFE27A), size: 28),
+            child: _FloatingDot(color: Color(0xFFFFE27A), size: 28),
           ),
           Container(
             width: 240,

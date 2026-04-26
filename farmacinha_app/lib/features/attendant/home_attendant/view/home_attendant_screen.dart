@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
 import 'package:farmacia_app/app/app_routes.dart';
+import 'package:farmacia_app/features/attendant/home_attendant/data/mocks/mock_attendant_notifications.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view/widgets/attendant_chat_item.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view/widgets/attendant_status_tile.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view_model/home_attendant_view_model.dart';
@@ -23,6 +24,9 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final notificationsCount =
+        MockAttendantNotifications.getNotifications().length;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
@@ -73,24 +77,28 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
                 },
                 icon: const Icon(Icons.notifications, color: Color(0xFF111827)),
               ),
-              Positioned(
-                right: 9,
-                top: 8,
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '3',
-                      style: TextStyle(color: Colors.white, fontSize: 10),
+              if (notificationsCount > 0)
+                Positioned(
+                  right: 9,
+                  top: 8,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$notificationsCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
           IconButton(
@@ -151,28 +159,28 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
                         left: BorderSide(color: Pallete.primaryRed, width: 4),
                       ),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.warning_rounded,
                           color: Pallete.primaryRed,
                           size: 34,
                         ),
-                        SizedBox(width: 14),
+                        const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Mensagens Urgentes (2)',
-                                style: TextStyle(
+                                'Mensagens Urgentes ($notificationsCount)',
+                                style: const TextStyle(
                                   fontSize: 16,
                                   color: Pallete.primaryRed,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              SizedBox(height: 2),
-                              Text(
+                              const SizedBox(height: 2),
+                              const Text(
                                 'Resposta imediata necessária (>5 min).',
                                 style: TextStyle(
                                   fontSize: 14,

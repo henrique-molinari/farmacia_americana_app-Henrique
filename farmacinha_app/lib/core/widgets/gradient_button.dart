@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../palette/pallete.dart';
 
 class GradientButton extends StatelessWidget {
-  final VoidCallback? onPressed; // Adicionado para receber a ação da ViewModel
+  final VoidCallback? onPressed;
+  final String label;
 
-  const GradientButton({super.key, this.onPressed});
+  const GradientButton({super.key, this.onPressed, this.label = 'Entrar'});
 
   @override
   Widget build(BuildContext context) {
@@ -18,15 +19,15 @@ class GradientButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: ElevatedButton(
-        onPressed: onPressed, // Agora o botão executa a função passada
+        onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           fixedSize: const Size(330, 55),
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
         ),
-        child: const Text(
-          'Entrar',
-          style: TextStyle(
+        child: Text(
+          label,
+          style: const TextStyle(
             fontSize: 17,
             color: Colors.white,
             fontWeight: FontWeight.w600,

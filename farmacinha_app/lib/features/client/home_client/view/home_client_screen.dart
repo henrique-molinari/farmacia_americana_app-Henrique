@@ -20,7 +20,8 @@ class HomeClientScreen extends StatefulWidget {
 
 class _HomeClientScreenState extends State<HomeClientScreen> {
   final HomeClientViewModel viewModel = HomeClientViewModel();
-  final NotificationsViewModel notificationsViewModel = NotificationsViewModel();
+  final NotificationsViewModel notificationsViewModel =
+      NotificationsViewModel();
   int _currentTabIndex = 0;
 
   @override
@@ -49,7 +50,9 @@ class _HomeClientScreenState extends State<HomeClientScreen> {
         }
         break;
       case 3:
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AccountScreen()));
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const AccountScreen()));
         break;
       default:
         setState(() => _currentTabIndex = index);
@@ -69,7 +72,8 @@ class _HomeClientScreenState extends State<HomeClientScreen> {
             onNotificationTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => NotificationsScreen(viewModel: notificationsViewModel),
+                  builder: (_) =>
+                      NotificationsScreen(viewModel: notificationsViewModel),
                 ),
               );
             },
@@ -81,11 +85,48 @@ class _HomeClientScreenState extends State<HomeClientScreen> {
         listenable: viewModel,
         builder: (context, _) {
           if (viewModel.isLoading) {
-            return const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Pallete.primaryRed)));
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation(Pallete.primaryRed),
+              ),
+            );
+          }
+
+          if (viewModel.errorMessage != null &&
+              viewModel.filteredProducts.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.cloud_off_rounded,
+                      size: 56,
+                      color: Pallete.textColor,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      viewModel.errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Pallete.textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: viewModel.refreshProducts,
+                      child: const Text('Tentar novamente'),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
           return RefreshIndicator(
-            onRefresh: () async => viewModel.clearFilters(),
+            onRefresh: viewModel.refreshProducts,
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,9 +138,15 @@ class _HomeClientScreenState extends State<HomeClientScreen> {
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text('Categorias', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      'Categorias',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  
+
                   // CORREÇÃO 1: Categoria agora navega para SearchResultScreen
                   CategoryGrid(
                     categories: viewModel.categories,
@@ -107,14 +154,21 @@ class _HomeClientScreenState extends State<HomeClientScreen> {
                       Navigator.pushNamed(
                         context,
                         AppRoutes.searchResult,
-                        arguments: categoryName, // Passa o nome da categoria para a busca
+                        arguments:
+                            categoryName, // Passa o nome da categoria para a busca
                       );
                     },
                   ),
-                  
+
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    child: Text('Destaques para você', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      'Destaques para você',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   _buildProductsGrid(),
                   const SizedBox(height: 30),
