@@ -144,6 +144,7 @@ class MockProducts {
         isOnPromotion: true,
         discountPercentage: 18,
       ),
+    
     ];
   }
 }

@@ -154,7 +154,7 @@ class _HomeClientScreenState extends State<HomeClientScreen> {
             }
           },
           decoration: const InputDecoration(
-            hintText: 'Buscar na Farmácia Americana...',
+            hintText: 'Buscar na Drogaria Americana...',
             border: InputBorder.none,
             icon: Icon(Icons.search, color: Pallete.textColor),
           ),

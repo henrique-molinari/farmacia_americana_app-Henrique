@@ -26,8 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Precisamos acessar a camera para capturar receitas medicas no atendimento da Drogaria Americana.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Precisamos acessar suas imagens para anexar fotos no atendimento da Farmacia Americana.</string>
+	<string>Precisamos acessar suas imagens para anexar fotos no atendimento da Drogaria Americana.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

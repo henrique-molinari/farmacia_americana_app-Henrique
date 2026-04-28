@@ -6,6 +6,8 @@ import 'package:farmacia_app/features/client/chat/data/models/client_chat_messag
 import 'package:farmacia_app/features/client/chat/data/models/client_chat_option_model.dart';
 import 'package:farmacia_app/features/client/chat/view_model/client_chat_view_model.dart';
 import 'package:farmacia_app/features/client/home_client/view/home_client_screen.dart';
+import 'package:farmacia_app/features/client/ocr_prescription/data/models/ocr_prescription_review_result_model.dart';
+import 'package:farmacia_app/features/client/ocr_prescription/view/ocr_prescription_review_screen.dart';
 import 'package:farmacia_app/features/client/widgets/custom_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 
@@ -153,7 +155,9 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
                           isOptionsEnabled: _viewModel.isOptionsEnabledFor(
                             message.id,
                           ),
-                          onOptionSelected: _viewModel.selectOption,
+                          onOptionSelected: (option) {
+                            _handleOptionSelected(option);
+                          },
                         ),
                       ),
                       if (conversation.isSupportTyping) ...[
@@ -214,6 +218,18 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
+                _AttachmentOptionTile(
+                  icon: Icons.document_scanner_rounded,
+                  iconColor: const Color(0xFF6E5C00),
+                  iconBackgroundColor: const Color(0xFFFFF0B3),
+                  title: 'Ler receita com IA',
+                  subtitle: 'Captura ou seleciona uma imagem para OCR e revisao',
+                  onTap: () async {
+                    Navigator.of(sheetContext).pop();
+                    await _openPrescriptionOcrFlow();
+                  },
+                ),
+                const SizedBox(height: 12),
                 _AttachmentOptionTile(
                   icon: Icons.photo_library_rounded,
                   iconColor: const Color(0xFF005F93),
@@ -282,6 +298,26 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _handleOptionSelected(ClientChatOption option) async {
+    if (_viewModel.isPrescriptionOcrOption(option)) {
+      _viewModel.startPrescriptionOcrFlow();
+      await _openPrescriptionOcrFlow();
+      return;
+    }
+
+    _viewModel.selectOption(option);
+  }
+
+  Future<void> _openPrescriptionOcrFlow() async {
+    final result = await Navigator.of(context).push<OcrPrescriptionReviewResult>(
+      MaterialPageRoute(builder: (_) => const OcrPrescriptionReviewScreen()),
+    );
+
+    if (!mounted || result == null) return;
+
+    _viewModel.registerPrescriptionOcrReview(result);
   }
 }
 
@@ -711,7 +747,9 @@ class _AttachmentOptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        onTap();
+      },
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(16),

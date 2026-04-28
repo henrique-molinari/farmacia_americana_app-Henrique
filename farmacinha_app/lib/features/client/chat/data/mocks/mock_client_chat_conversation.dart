@@ -3,7 +3,7 @@ import 'package:farmacia_app/features/client/chat/data/models/client_chat_conver
 class MockClientChatConversation {
   static ClientChatConversation getConversation() {
     return const ClientChatConversation(
-      pharmacyName: 'Farmacia Americana',
+      pharmacyName: 'Drogaria Americana',
       statusLabel: 'ChatBot e equipe de atendimento',
       isSupportTyping: false,
       messages: [],

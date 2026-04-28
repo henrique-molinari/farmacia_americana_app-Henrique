@@ -56,7 +56,7 @@ class _AttendantChatScreenState extends State<AttendantChatScreen> {
         title: const Row(
           children: [
             Text(
-              'FARMÁCIA AMERICANA',
+              'DROGARIA AMERICANA',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,

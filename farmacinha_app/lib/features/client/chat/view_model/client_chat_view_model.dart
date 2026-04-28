@@ -7,6 +7,7 @@ import 'package:farmacia_app/features/client/chat/data/models/client_chat_bot_st
 import 'package:farmacia_app/features/client/chat/data/models/client_chat_conversation_model.dart';
 import 'package:farmacia_app/features/client/chat/data/models/client_chat_message_model.dart';
 import 'package:farmacia_app/features/client/chat/data/models/client_chat_option_model.dart';
+import 'package:farmacia_app/features/client/ocr_prescription/data/models/ocr_prescription_review_result_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -36,6 +37,10 @@ class ClientChatViewModel extends ChangeNotifier {
 
   bool isOptionsEnabledFor(String messageId) {
     return _activeOptionsMessageId == messageId;
+  }
+
+  bool isPrescriptionOcrOption(ClientChatOption option) {
+    return option.nextStepId == 'prescription_ocr';
   }
 
   void selectOption(ClientChatOption option) {
@@ -166,7 +171,7 @@ class ClientChatViewModel extends ChangeNotifier {
       'main_menu': const ClientChatBotStep(
         id: 'main_menu',
         message:
-            'Bem-vindo(a) a Farmacia Americana.\n\nComo posso te ajudar hoje?\nEscolha uma opcao no proprio chat para continuar.',
+            'Bem-vindo(a) a Drogaria Americana.\n\nComo posso te ajudar hoje?\nEscolha uma opcao no proprio chat para continuar.',
         options: [
           ClientChatOption(
             id: 'products',
@@ -409,6 +414,7 @@ class ClientChatViewModel extends ChangeNotifier {
         message:
             'Para medicamentos que exigem receita, voce pode anexar imagem ou documento aqui mesmo. Depois, se quiser, siga para um humano para validacao final.',
         parentStepId: 'general_menu',
+        includePrescriptionOcrShortcut: true,
       ),
       'other_subject': _leafStep(
         id: 'other_subject',
@@ -545,11 +551,18 @@ class ClientChatViewModel extends ChangeNotifier {
     required String id,
     required String message,
     required String parentStepId,
+    bool includePrescriptionOcrShortcut = false,
   }) {
     return ClientChatBotStep(
       id: id,
       message: message,
       options: [
+        if (includePrescriptionOcrShortcut)
+          const ClientChatOption(
+            id: 'ocr-prescription',
+            label: 'Ler receita com IA',
+            nextStepId: 'prescription_ocr',
+          ),
         ClientChatOption(
           id: 'back-parent-$id',
           label: 'Voltar para a categoria anterior',
@@ -617,8 +630,8 @@ class ClientChatViewModel extends ChangeNotifier {
         sender: ClientChatSender.attendant,
         time: _formatCurrentTime(),
         text: isUrgent
-            ? 'Ola, aqui e a Juliana, do atendimento humano da Farmacia Americana. Recebi sua prioridade e vou seguir com voce por aqui agora.'
-            : 'Ola, aqui e a Juliana, do atendimento humano da Farmacia Americana. Acabei de assumir sua conversa e vou te ajudar a partir daqui.',
+            ? 'Ola, aqui e a Juliana, do atendimento humano da Drogaria Americana. Recebi sua prioridade e vou seguir com voce por aqui agora.'
+            : 'Ola, aqui e a Juliana, do atendimento humano da Drogaria Americana. Acabei de assumir sua conversa e vou te ajudar a partir daqui.',
       ),
     );
   }
@@ -628,6 +641,111 @@ class ClientChatViewModel extends ChangeNotifier {
       isSupportTyping: false,
       messages: [..._conversation.messages, message],
     );
+  }
+
+  void startPrescriptionOcrFlow() {
+    _appendMessage(
+      ClientChatMessage(
+        id: 'ocr-request-${DateTime.now().microsecondsSinceEpoch}',
+        sender: ClientChatSender.client,
+        time: _formatCurrentTime(),
+        text: 'Quero analisar uma receita com OCR.',
+        showReadReceipt: true,
+      ),
+    );
+
+    _appendMessage(
+      ClientChatMessage(
+        id: 'ocr-guidance-${DateTime.now().microsecondsSinceEpoch}',
+        sender: ClientChatSender.bot,
+        time: _formatCurrentTime(),
+        text:
+            'Perfeito. Abra a leitura OCR, revise os dados reconhecidos e so depois envie o formulario para o chat. O envio nao substitui a validacao do farmaceutico.',
+      ),
+    );
+
+    _activeOptionsMessageId = null;
+    notifyListeners();
+  }
+
+  void registerPrescriptionOcrReview(OcrPrescriptionReviewResult review) {
+    final attachment = ClientChatAttachment(
+      id: 'ocr-attachment-${DateTime.now().microsecondsSinceEpoch}',
+      type: ClientAttachmentType.photo,
+      fileName: review.fileName,
+      fileDetails: 'Receita revisada via OCR',
+      filePath: review.imagePath,
+      fileExtension: 'jpg',
+    );
+
+    _appendMessage(
+      ClientChatMessage(
+        id: 'ocr-attachment-message-${DateTime.now().microsecondsSinceEpoch}',
+        sender: ClientChatSender.client,
+        time: _formatCurrentTime(),
+        attachment: attachment,
+        showReadReceipt: true,
+      ),
+    );
+
+    final medicationsText = review.medications.isEmpty
+        ? 'Nenhum medicamento confirmado no formulario.'
+        : review.medications.map((item) => '- $item').join('\n');
+
+    final crmText = review.crm.isEmpty ? 'Nao informado' : review.crm;
+    final prescriptionColorText = review.prescriptionColor.isEmpty
+        ? 'Nao informada'
+        : review.prescriptionColor;
+    final issueDateText = review.issueDateText.isEmpty
+        ? 'Nao informada'
+        : review.issueDateText;
+
+    _appendMessage(
+      ClientChatMessage(
+        id: 'ocr-summary-${DateTime.now().microsecondsSinceEpoch}',
+        sender: ClientChatSender.client,
+        time: _formatCurrentTime(),
+        text:
+            'Enviei a receita revisada.\n\nTipo: ${review.wasHandwritten ? 'Escrita a caneta' : 'Digitalizada'}\nCRM: $crmText\nCor: $prescriptionColorText\nData: $issueDateText\nMedicamentos:\n$medicationsText',
+        showReadReceipt: true,
+      ),
+    );
+
+    _appendMessage(
+      ClientChatMessage(
+        id: 'ocr-response-${DateTime.now().microsecondsSinceEpoch}',
+        sender: ClientChatSender.bot,
+        time: _formatCurrentTime(),
+        text:
+            'Receita recebida. Os dados revisados foram anexados ao atendimento como apoio de digitacao. A validacao tecnica final continuara com o farmaceutico responsavel.',
+      ),
+    );
+
+    if (review.hasLowConfidenceWarning) {
+      _appendMessage(
+        ClientChatMessage(
+          id: 'ocr-low-confidence-${DateTime.now().microsecondsSinceEpoch}',
+          sender: ClientChatSender.bot,
+          time: _formatCurrentTime(),
+          text:
+              'Aviso: a receita foi marcada como escrita a caneta e parte da leitura pode ter ficado incompleta. Os campos enviados devem ser conferidos manualmente antes da validacao final.',
+        ),
+      );
+    }
+
+    if (review.hasControlledMedicationWarning) {
+      _appendMessage(
+        ClientChatMessage(
+          id: 'ocr-warning-${DateTime.now().microsecondsSinceEpoch}',
+          sender: ClientChatSender.bot,
+          time: _formatCurrentTime(),
+          text:
+              'Alerta regulatorio: Para este medicamento, a apresentacao da via fisica original ou assinatura digital ICP-Brasil e obrigatoria.',
+        ),
+      );
+    }
+
+    notifyListeners();
   }
 
   Future<bool> _requestMediaPermission() async {

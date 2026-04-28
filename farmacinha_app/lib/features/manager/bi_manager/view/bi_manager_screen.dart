@@ -136,7 +136,7 @@ class _BiManagerScreenState extends State<BiManagerScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'FARMÁCIA AMERICANA',
+                'DROGARIA AMERICANA',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,

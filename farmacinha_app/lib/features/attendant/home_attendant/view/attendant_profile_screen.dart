@@ -32,7 +32,7 @@ class _AttendantProfileScreenState extends State<AttendantProfileScreen> {
             title: const Row(
               children: [
                 Text(
-                  'FARMÁCIA AMERICANA',
+                  'DROGARIA AMERICANA',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,

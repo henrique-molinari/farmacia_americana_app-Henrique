@@ -99,7 +99,7 @@ class CartViewModel extends ChangeNotifier {
           ? 'Entrega'
           : 'Retirada na farmácia';
 
-  String get storePickupLabel => 'Farmácia Americana Paulista';
+  String get storePickupLabel => 'Drogaria Americana Paulista';
 
   String get storePickupAddress =>
       'Avenida Paulista, 1500 - Bela Vista, São Paulo - SP';

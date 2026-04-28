@@ -1,0 +1,4 @@
+enum PrescriptionInputStyle {
+  handwritten,
+  digital,
+}

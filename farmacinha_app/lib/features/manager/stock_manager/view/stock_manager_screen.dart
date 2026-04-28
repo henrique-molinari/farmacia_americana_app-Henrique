@@ -72,7 +72,7 @@ class _StockManagerScreenState extends State<StockManagerScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'FARMÁCIA AMERICANA',
+                'DROGARIA AMERICANA',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,

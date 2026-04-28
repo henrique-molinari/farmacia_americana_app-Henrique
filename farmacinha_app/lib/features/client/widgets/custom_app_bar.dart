@@ -36,7 +36,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           text: const TextSpan(
             children: [
               TextSpan(
-                text: 'Farmácia ',
+                text: 'Drogaria ',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,

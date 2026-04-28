@@ -156,7 +156,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                   _BrandDash(color: Color(0xFFE8B5BF)),
                   SizedBox(width: 10),
                   Text(
-                    'FARMÁCIA AMERICANA',
+                    'DROGARIA AMERICANA',
                     style: TextStyle(
                       color: _confirmationMuted,
                       fontSize: 11,
