@@ -1,13 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
+import 'package:flutter/material.dart';
 
 class ProfileForm extends StatefulWidget {
   final String initialName;
   final String initialRole;
   final String initialEmail;
-
-  // Callback chamado quando o gerente salva as alterações
-  final void Function(String name, String role, String email) onSave;
+  final Future<bool> Function(String name, String role, String email) onSave;
 
   const ProfileForm({
     super.key,
@@ -22,31 +20,29 @@ class ProfileForm extends StatefulWidget {
 }
 
 class _ProfileFormState extends State<ProfileForm> {
-  late TextEditingController _nameController;
-  late TextEditingController _roleController;
-  late TextEditingController _emailController;
+  late final TextEditingController _nameController;
+  late final TextEditingController _roleController;
+  late final TextEditingController _emailController;
 
-  // Controla se o botão "Salvar" aparece ou não
   bool _hasChanges = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
 
-    // Inicializa os campos com os dados atuais do gerente
     _nameController = TextEditingController(text: widget.initialName);
     _roleController = TextEditingController(text: widget.initialRole);
     _emailController = TextEditingController(text: widget.initialEmail);
 
-    // Monitora qualquer digitação nos campos
     _nameController.addListener(_checkChanges);
     _roleController.addListener(_checkChanges);
     _emailController.addListener(_checkChanges);
   }
 
-  // Verifica se algum campo foi alterado em relação ao valor original
   void _checkChanges() {
-    final changed = _nameController.text != widget.initialName ||
+    final changed =
+        _nameController.text != widget.initialName ||
         _roleController.text != widget.initialRole ||
         _emailController.text != widget.initialEmail;
 
@@ -73,9 +69,8 @@ class _ProfileFormState extends State<ProfileForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Título da seção
           const Text(
-            'INFORMAÇÕES PESSOAIS',
+            'INFORMACOES PESSOAIS',
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
@@ -83,49 +78,32 @@ class _ProfileFormState extends State<ProfileForm> {
               letterSpacing: 1.2,
             ),
           ),
-
           const SizedBox(height: 20),
-
-          // Campo: Nome
           _buildField(
             label: 'Nome',
             controller: _nameController,
             icon: Icons.person_outline_rounded,
           ),
-
           const SizedBox(height: 16),
-
-          // Campo: Cargo
           _buildField(
             label: 'Cargo',
             controller: _roleController,
             icon: Icons.badge_outlined,
+            readOnly: true,
           ),
-
           const SizedBox(height: 16),
-
-          // Campo: E-mail
           _buildField(
             label: 'E-mail',
             controller: _emailController,
             icon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
           ),
-
-          // Botão de salvar — só aparece quando há alterações
           if (_hasChanges) ...[
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  widget.onSave(
-                    _nameController.text,
-                    _roleController.text,
-                    _emailController.text,
-                  );
-                  setState(() => _hasChanges = false);
-                },
+                onPressed: _isSaving ? null : _save,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Pallete.primaryRed,
                   foregroundColor: Pallete.whiteColor,
@@ -135,13 +113,22 @@ class _ProfileFormState extends State<ProfileForm> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Salvar Alterações',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Pallete.whiteColor,
+                        ),
+                      )
+                    : const Text(
+                        'Salvar Alteracoes',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
               ),
             ),
           ],
@@ -150,11 +137,32 @@ class _ProfileFormState extends State<ProfileForm> {
     );
   }
 
+  Future<void> _save() async {
+    setState(() => _isSaving = true);
+    final saved = await widget.onSave(
+      _nameController.text,
+      _roleController.text,
+      _emailController.text,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSaving = false;
+      if (saved) {
+        _hasChanges = false;
+      }
+    });
+  }
+
   Widget _buildField({
     required String label,
     required TextEditingController controller,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,6 +178,7 @@ class _ProfileFormState extends State<ProfileForm> {
         const SizedBox(height: 6),
         TextField(
           controller: controller,
+          readOnly: readOnly,
           keyboardType: keyboardType,
           style: const TextStyle(
             fontSize: 14,
@@ -186,7 +195,10 @@ class _ProfileFormState extends State<ProfileForm> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Pallete.primaryRed, width: 1.5),
+              borderSide: const BorderSide(
+                color: Pallete.primaryRed,
+                width: 1.5,
+              ),
             ),
             contentPadding: const EdgeInsets.symmetric(
               vertical: 14,
