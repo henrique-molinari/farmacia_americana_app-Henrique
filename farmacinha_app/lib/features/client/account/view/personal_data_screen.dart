@@ -148,7 +148,9 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
         enableSuggestions: true,
         style: TextStyle(
           fontSize: 22 / 1.4,
-          color: isPrefilled ? const Color(0xFF9B8D8B) : const Color(0xFF1C1617),
+          color: isPrefilled
+              ? const Color(0xFF9B8D8B)
+              : const Color(0xFF1C1617),
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
@@ -162,7 +164,10 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
             padding: const EdgeInsets.only(right: 20),
             child: Icon(icon, color: const Color(0xFFBBA9A7), size: 34 / 1.4),
           ),
-          suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+          suffixIconConstraints: const BoxConstraints(
+            minWidth: 0,
+            minHeight: 0,
+          ),
         ),
       ),
     );
@@ -259,7 +264,7 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
         ],
       ),
       child: ElevatedButton(
-        onPressed: () => _showInfo(viewModel.savePersonalData()),
+        onPressed: viewModel.isSavingPersonalData ? null : _savePersonalData,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
@@ -271,13 +276,19 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
         ),
         child: const Text(
           'Salvar Alterações',
-          style: TextStyle(
-            fontSize: 20 / 1.3,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20 / 1.3, fontWeight: FontWeight.bold),
         ),
       ),
     );
+  }
+
+  Future<void> _savePersonalData() async {
+    final message = await viewModel.savePersonalData();
+    if (!mounted) {
+      return;
+    }
+
+    _showInfo(message);
   }
 
   void _onBottomNavTap(int index) {
@@ -294,9 +305,9 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
     }
 
     if (index == 1) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const OrdersScreen()),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const OrdersScreen()));
       return;
     }
 
@@ -304,9 +315,9 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
   }
 
   void _showInfo(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _showChangePasswordSheet() {
@@ -408,23 +419,16 @@ class _ChangePasswordSheet extends StatelessWidget {
                   'Mínimo de 6 caracteres',
                   viewModel.hasMinLength,
                 ),
-                _buildRequirement(
-                  '1 letra maiúscula',
-                  viewModel.hasUppercase,
-                ),
-                _buildRequirement(
-                  '1 letra minúscula',
-                  viewModel.hasLowercase,
-                ),
-                _buildRequirement(
-                  '1 caractere numérico',
-                  viewModel.hasNumber,
-                ),
+                _buildRequirement('1 letra maiúscula', viewModel.hasUppercase),
+                _buildRequirement('1 letra minúscula', viewModel.hasLowercase),
+                _buildRequirement('1 caractere numérico', viewModel.hasNumber),
                 const SizedBox(height: 18),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => _saveNewPassword(context),
+                    onPressed: viewModel.isSavingPassword
+                        ? null
+                        : () => _saveNewPassword(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Pallete.primaryRed,
                       foregroundColor: Colors.white,
@@ -433,7 +437,16 @@ class _ChangePasswordSheet extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: const Text('Salvar nova senha'),
+                    child: viewModel.isSavingPassword
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Salvar nova senha'),
                   ),
                 ),
               ],
@@ -455,9 +468,7 @@ class _ChangePasswordSheet extends StatelessWidget {
       obscureText: obscureText,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         suffixIcon: IconButton(
           onPressed: onToggleVisibility,
           icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility),
@@ -490,8 +501,12 @@ class _ChangePasswordSheet extends StatelessWidget {
     );
   }
 
-  void _saveNewPassword(BuildContext context) {
-    final result = viewModel.saveNewPassword();
+  Future<void> _saveNewPassword(BuildContext context) async {
+    final result = await viewModel.saveNewPassword();
+    if (!context.mounted) {
+      return;
+    }
+
     if (result.shouldCloseSheet) {
       Navigator.of(context).pop();
       viewModel.resetPasswordForm();

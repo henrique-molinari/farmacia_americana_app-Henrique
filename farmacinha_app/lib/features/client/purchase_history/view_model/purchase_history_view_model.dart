@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:farmacia_app/features/client/orders/data/models/order_model.dart';
-import 'package:farmacia_app/features/client/purchase_history/data/mocks/mock_purchase_history.dart';
+import 'package:farmacia_app/features/client/orders/data/repositories/orders_repository.dart';
+import 'package:flutter/material.dart';
 
 class PurchaseHistoryViewModel extends ChangeNotifier {
   List<Order> _history = [];
@@ -11,8 +11,7 @@ class PurchaseHistoryViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  double get totalSpent =>
-      _history.fold(0, (sum, o) => sum + o.totalAmount);
+  double get totalSpent => _history.fold(0, (sum, o) => sum + o.totalAmount);
 
   int get totalOrders => _history.length;
 
@@ -20,19 +19,21 @@ class PurchaseHistoryViewModel extends ChangeNotifier {
     _load();
   }
 
-  void _load() {
+  Future<void> _load() async {
     _isLoading = true;
     notifyListeners();
-    Future.delayed(const Duration(milliseconds: 500), () {
-      try {
-        _history = MockPurchaseHistory.getHistory();
-        _isLoading = false;
-        notifyListeners();
-      } catch (e) {
-        _errorMessage = 'Erro ao carregar histórico.';
-        _isLoading = false;
-        notifyListeners();
-      }
-    });
+
+    try {
+      final orders = await OrdersRepository.instance.fetchCurrentUserOrders();
+      _history = orders
+          .where((order) => order.status == OrderStatus.delivered)
+          .toList();
+      _errorMessage = null;
+    } catch (e) {
+      _errorMessage = 'Erro ao carregar historico.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

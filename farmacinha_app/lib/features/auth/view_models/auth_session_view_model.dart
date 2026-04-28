@@ -22,6 +22,12 @@ class AuthSessionViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateCurrentUser(User user) {
+    _currentUser = user;
+    _isGuest = false;
+    notifyListeners();
+  }
+
   void enterAsGuest() {
     _currentUser = null;
     _isGuest = true;

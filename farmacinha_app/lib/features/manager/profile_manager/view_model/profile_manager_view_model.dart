@@ -1,38 +1,43 @@
-// view_model/profile_manager_view_model.dart
-//
-// Contém os dados e a lógica da tela de Perfil do Gerente.
-// Futuramente os dados virão de uma API ou banco de dados.
+import 'package:farmacia_app/features/auth/data/models/user_model.dart';
+import 'package:farmacia_app/features/auth/view_models/auth_session_view_model.dart';
 
 class ProfileManagerViewModel {
-  // Dados do gerente logado (estáticos por enquanto)
-  String name = 'João Silva';
-  String role = 'Gerente Geral';
-  String email = 'joao@farmaciaamericana.com';
+  ProfileManagerViewModel() {
+    final user = AuthSessionViewModel.instance.currentUser;
+    if (user != null) {
+      name = user.name.isEmpty ? 'Gerente' : user.name;
+      email = user.email;
+      role = _roleLabel(user.role);
+    }
+  }
 
-  // Filial ativa — somente leitura
-  final String filial = 'Jacutinga — MG';
+  String name = 'Gerente';
+  String role = 'Gerente';
+  String email = '';
 
-  // Histórico de atividades recentes
+  final String filial = 'Jacutinga - MG';
+
   final List<Map<String, String>> activityHistory = [
+    {'title': 'Login realizado', 'time': 'Sessao atual', 'type': 'success'},
     {
-      'title': 'Relatório gerado',
-      'time': 'Hoje, 10:32',
-      'type': 'success',
-    },
-    {
-      'title': 'Estoque atualizado',
-      'time': 'Hoje, 09:15',
-      'type': 'warning',
-    },
-    {
-      'title': 'Pedido #CK-9279 cancelado',
-      'time': 'Ontem, 17:48',
-      'type': 'error',
-    },
-    {
-      'title': 'Login realizado',
-      'time': 'Ontem, 08:00',
+      'title': 'Painel conectado ao Supabase',
+      'time': 'Hoje',
       'type': 'success',
     },
   ];
+
+  String _roleLabel(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        return 'Administrador';
+      case UserRole.gerente:
+        return 'Gerente';
+      case UserRole.farmaceutico:
+        return 'Farmaceutico';
+      case UserRole.atendente:
+        return 'Atendente';
+      case UserRole.cliente:
+        return 'Cliente';
+    }
+  }
 }

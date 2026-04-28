@@ -80,21 +80,32 @@ class OrderItemTile extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                ...order.items.take(3).map(
-                  (item) => Container(
-                    width: 40,
-                    height: 40,
-                    margin: const EdgeInsets.only(right: 6),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Pallete.grayColor,
-                      image: DecorationImage(
-                        image: NetworkImage(item.productImageUrl),
-                        fit: BoxFit.cover,
+                ...order.items
+                    .take(3)
+                    .map(
+                      (item) => Container(
+                        width: 40,
+                        height: 40,
+                        margin: const EdgeInsets.only(right: 6),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          color: Pallete.grayColor,
+                          image: item.productImageUrl.isEmpty
+                              ? null
+                              : DecorationImage(
+                                  image: NetworkImage(item.productImageUrl),
+                                  fit: BoxFit.cover,
+                                ),
+                        ),
+                        child: item.productImageUrl.isEmpty
+                            ? const Icon(
+                                Icons.medication_rounded,
+                                color: Pallete.primaryRed,
+                                size: 20,
+                              )
+                            : null,
                       ),
                     ),
-                  ),
-                ),
                 if (order.items.length > 3)
                   Container(
                     width: 40,
@@ -132,7 +143,7 @@ class OrderItemTile extends StatelessWidget {
                   ],
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

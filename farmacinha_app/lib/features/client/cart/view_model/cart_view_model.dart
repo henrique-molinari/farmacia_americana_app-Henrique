@@ -30,7 +30,8 @@ class CartViewModel extends ChangeNotifier {
   Order? _lastPlacedOrder;
 
   List<CartItem> get items => List<CartItem>.unmodifiable(_items);
-  List<DeliveryAddress> get addresses => List<DeliveryAddress>.unmodifiable(_addresses);
+  List<DeliveryAddress> get addresses =>
+      List<DeliveryAddress>.unmodifiable(_addresses);
   bool get isEmpty => _items.isEmpty;
   bool get isNotEmpty => _items.isNotEmpty;
   bool get isProcessingCheckout => _isProcessingCheckout;
@@ -40,9 +41,9 @@ class CartViewModel extends ChangeNotifier {
   Order? get lastPlacedOrder => _lastPlacedOrder;
 
   DeliveryAddress get selectedAddress => _addresses.firstWhere(
-        (address) => address.id == _selectedAddressId,
-        orElse: () => _addresses.first,
-      );
+    (address) => address.id == _selectedAddressId,
+    orElse: () => _addresses.first,
+  );
 
   String get customerName =>
       _authSession.currentUser?.name ?? selectedAddress.recipient;
@@ -71,11 +72,15 @@ class CartViewModel extends ChangeNotifier {
   }
 
   double get shippingFee {
-    if (_items.isEmpty || _selectedFulfillmentType == CartFulfillmentType.pickup) {
+    if (_items.isEmpty ||
+        _selectedFulfillmentType == CartFulfillmentType.pickup) {
       return 0;
     }
 
-    final discountedSubtotal = math.max(0, subtotal - couponDiscount - paymentDiscount);
+    final discountedSubtotal = math.max(
+      0,
+      subtotal - couponDiscount - paymentDiscount,
+    );
     if (discountedSubtotal >= 120) {
       return 0;
     }
@@ -96,8 +101,8 @@ class CartViewModel extends ChangeNotifier {
 
   String get deliveryModeLabel =>
       _selectedFulfillmentType == CartFulfillmentType.delivery
-          ? 'Entrega'
-          : 'Retirada na farmácia';
+      ? 'Entrega'
+      : 'Retirada na farmácia';
 
   String get storePickupLabel => 'Farmácia Americana Paulista';
 
@@ -105,7 +110,9 @@ class CartViewModel extends ChangeNotifier {
       'Avenida Paulista, 1500 - Bela Vista, São Paulo - SP';
 
   void addProduct(Product product, {int quantity = 1}) {
-    final existingIndex = _items.indexWhere((item) => item.productId == product.id);
+    final existingIndex = _items.indexWhere(
+      (item) => item.productId == product.id,
+    );
     final effectivePrice = _resolveProductPrice(product);
     final subtitle = _buildProductSubtitle(product);
 
@@ -140,7 +147,9 @@ class CartViewModel extends ChangeNotifier {
     double? originalUnitPrice,
     int quantity = 1,
   }) {
-    final existingIndex = _items.indexWhere((item) => item.productId == productId);
+    final existingIndex = _items.indexWhere(
+      (item) => item.productId == productId,
+    );
 
     if (existingIndex >= 0) {
       final existingItem = _items[existingIndex];
@@ -246,13 +255,13 @@ class CartViewModel extends ChangeNotifier {
     _isProcessingCheckout = true;
     notifyListeners();
 
-    await Future<void>.delayed(const Duration(milliseconds: 700));
-
-    final now = DateTime.now();
-    final order = Order(
-      id: _buildOrderId(now),
-      userId: _authSession.currentUser?.id ?? 'guest',
-      items: _items
+    try {
+      final now = DateTime.now();
+      final estimatedDelivery =
+          _selectedFulfillmentType == CartFulfillmentType.delivery
+          ? now.add(const Duration(minutes: 35))
+          : now.add(const Duration(minutes: 20));
+      final orderItems = _items
           .map(
             (item) => OrderItem(
               productId: item.productId,
@@ -262,27 +271,28 @@ class CartViewModel extends ChangeNotifier {
               unitPrice: item.unitPrice,
             ),
           )
-          .toList(growable: false),
-      status: OrderStatus.preparing,
-      paymentMethod: _selectedPaymentMethod,
-      totalAmount: total,
-      deliveryAddress: _selectedFulfillmentType == CartFulfillmentType.delivery
-          ? selectedAddress.singleLineAddress
-          : storePickupAddress,
-      createdAt: now,
-      estimatedDelivery: _selectedFulfillmentType == CartFulfillmentType.delivery
-          ? now.add(const Duration(minutes: 35))
-          : now.add(const Duration(minutes: 20)),
-      trackingCode: 'BR${now.millisecondsSinceEpoch.toString().substring(6)}',
-    );
+          .toList(growable: false);
 
-    _ordersStore.addOrder(order);
-    _lastPlacedOrder = order;
-    _items.clear();
-    _appliedCouponCode = null;
-    _isProcessingCheckout = false;
-    notifyListeners();
-    return order;
+      final order = await _ordersStore.createOrder(
+        items: orderItems,
+        paymentMethod: _selectedPaymentMethod,
+        totalAmount: total,
+        deliveryAddress:
+            _selectedFulfillmentType == CartFulfillmentType.delivery
+            ? selectedAddress.singleLineAddress
+            : storePickupAddress,
+        estimatedDelivery: estimatedDelivery,
+        trackingCode: 'BR${now.millisecondsSinceEpoch.toString().substring(6)}',
+      );
+
+      _lastPlacedOrder = order;
+      _items.clear();
+      _appliedCouponCode = null;
+      return order;
+    } finally {
+      _isProcessingCheckout = false;
+      notifyListeners();
+    }
   }
 
   static double resolvePrice(Product product) => _resolveProductPrice(product);
@@ -307,12 +317,6 @@ class CartViewModel extends ChangeNotifier {
 
   static String _formatCurrency(double value) {
     return 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
-  }
-
-  String _buildOrderId(DateTime now) {
-    final year = now.year;
-    final sequence = now.millisecondsSinceEpoch.toString().substring(7);
-    return 'PED-$year-$sequence';
   }
 }
 

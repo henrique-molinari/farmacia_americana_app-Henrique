@@ -5,6 +5,7 @@ import 'package:farmacia_app/features/manager/profile_manager/view/widgets/profi
 import 'package:farmacia_app/features/manager/profile_manager/view/widgets/activity_history.dart';
 import 'package:farmacia_app/features/manager/profile_manager/view_model/profile_manager_view_model.dart';
 import 'package:farmacia_app/app/app_routes.dart';
+import 'package:farmacia_app/features/auth/view_models/auth_session_view_model.dart';
 
 class ProfileManagerScreen extends StatefulWidget {
   const ProfileManagerScreen({super.key});
@@ -59,7 +60,11 @@ class _ProfileManagerScreenState extends State<ProfileManagerScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              await AuthSessionViewModel.instance.signOut();
+              if (!context.mounted) {
+                return;
+              }
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 AppRoutes.login,

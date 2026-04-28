@@ -1,20 +1,12 @@
+import 'package:farmacia_app/features/auth/data/repositories/auth_repository.dart';
+import 'package:farmacia_app/features/auth/view_models/auth_session_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PersonalDataViewModel extends ChangeNotifier {
   PersonalDataViewModel() {
-    _bindPrefilledClearBehavior(
-      focusNode: nameFocusNode,
-      controller: nameController,
-      isPrefilled: () => _isNamePrefilled,
-      setPrefilled: (value) => _isNamePrefilled = value,
-    );
-    _bindPrefilledClearBehavior(
-      focusNode: emailFocusNode,
-      controller: emailController,
-      isPrefilled: () => _isEmailPrefilled,
-      setPrefilled: (value) => _isEmailPrefilled = value,
-    );
+    _prefillFromSession();
     _bindPrefilledClearBehavior(
       focusNode: cpfFocusNode,
       controller: cpfController,
@@ -30,14 +22,17 @@ class PersonalDataViewModel extends ChangeNotifier {
     newPasswordController.addListener(_handlePasswordChange);
   }
 
-  final TextEditingController nameController =
-      TextEditingController(text: 'Mariana Silva Oliveira');
-  final TextEditingController emailController =
-      TextEditingController(text: 'mariana.silva@email.com');
-  final TextEditingController cpfController =
-      TextEditingController(text: '123.456.789-00');
-  final TextEditingController phoneController =
-      TextEditingController(text: '(11) 98765-4321');
+  final AuthSessionViewModel _authSession = AuthSessionViewModel.instance;
+  final AuthRepository _authRepository = AuthRepository.instance;
+
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController cpfController = TextEditingController(
+    text: '123.456.789-00',
+  );
+  final TextEditingController phoneController = TextEditingController(
+    text: '(11) 98765-4321',
+  );
 
   final TextEditingController currentPasswordController =
       TextEditingController();
@@ -50,14 +45,15 @@ class PersonalDataViewModel extends ChangeNotifier {
   final FocusNode cpfFocusNode = FocusNode();
   final FocusNode phoneFocusNode = FocusNode();
 
-  bool _isNamePrefilled = true;
-  bool _isEmailPrefilled = true;
+  bool _isNamePrefilled = false;
+  bool _isEmailPrefilled = false;
   bool _isCpfPrefilled = true;
   bool _isPhonePrefilled = true;
-
   bool _hideCurrentPassword = true;
   bool _hideNewPassword = true;
   bool _hideConfirmPassword = true;
+  bool _isSavingPersonalData = false;
+  bool _isSavingPassword = false;
 
   bool get isNamePrefilled => _isNamePrefilled;
   bool get isEmailPrefilled => _isEmailPrefilled;
@@ -67,21 +63,25 @@ class PersonalDataViewModel extends ChangeNotifier {
   bool get hideCurrentPassword => _hideCurrentPassword;
   bool get hideNewPassword => _hideNewPassword;
   bool get hideConfirmPassword => _hideConfirmPassword;
+  bool get isSavingPersonalData => _isSavingPersonalData;
+  bool get isSavingPassword => _isSavingPassword;
 
   bool get hasMinLength => newPasswordController.text.length >= 6;
-  bool get hasUppercase => RegExp(r'[A-Z]').hasMatch(newPasswordController.text);
-  bool get hasLowercase => RegExp(r'[a-z]').hasMatch(newPasswordController.text);
+  bool get hasUppercase =>
+      RegExp(r'[A-Z]').hasMatch(newPasswordController.text);
+  bool get hasLowercase =>
+      RegExp(r'[a-z]').hasMatch(newPasswordController.text);
   bool get hasNumber => RegExp(r'[0-9]').hasMatch(newPasswordController.text);
 
   List<TextInputFormatter> get cpfInputFormatters => <TextInputFormatter>[
-        FilteringTextInputFormatter.digitsOnly,
-        const CpfInputFormatter(),
-      ];
+    FilteringTextInputFormatter.digitsOnly,
+    const CpfInputFormatter(),
+  ];
 
   List<TextInputFormatter> get phoneInputFormatters => <TextInputFormatter>[
-        FilteringTextInputFormatter.digitsOnly,
-        const PhoneInputFormatter(),
-      ];
+    FilteringTextInputFormatter.digitsOnly,
+    const PhoneInputFormatter(),
+  ];
 
   void toggleCurrentPasswordVisibility() {
     _hideCurrentPassword = !_hideCurrentPassword;
@@ -98,9 +98,48 @@ class PersonalDataViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  String savePersonalData() => 'Dados salvos com sucesso!';
+  Future<String> savePersonalData() async {
+    if (_isSavingPersonalData) {
+      return 'Salvamento em andamento.';
+    }
 
-  PasswordSaveResult saveNewPassword() {
+    _isSavingPersonalData = true;
+    notifyListeners();
+
+    try {
+      final requestedEmail = emailController.text.trim().toLowerCase();
+      final updatedUser = await _authRepository.updateCurrentUserProfile(
+        fullName: nameController.text,
+        email: requestedEmail,
+      );
+      _authSession.updateCurrentUser(updatedUser);
+      nameController.text = updatedUser.name;
+      emailController.text = updatedUser.email;
+      _isNamePrefilled = false;
+      _isEmailPrefilled = false;
+
+      if (requestedEmail != updatedUser.email.toLowerCase()) {
+        return 'Nome salvo. O e-mail de login ainda continua ${updatedUser.email}. Para troca instantanea, rode o SQL update_my_profile_instant no Supabase.';
+      }
+
+      return 'Dados salvos com sucesso!';
+    } on AuthException catch (error) {
+      return _formatAuthError(error.message);
+    } on PostgrestException catch (error) {
+      return 'Nao foi possivel salvar no banco. Detalhe: ${error.message}';
+    } catch (error) {
+      return error.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _isSavingPersonalData = false;
+      notifyListeners();
+    }
+  }
+
+  Future<PasswordSaveResult> saveNewPassword() async {
+    if (_isSavingPassword) {
+      return const PasswordSaveResult(message: 'Alteracao em andamento.');
+    }
+
     final hasAllRules =
         hasMinLength && hasUppercase && hasLowercase && hasNumber;
 
@@ -110,20 +149,39 @@ class PersonalDataViewModel extends ChangeNotifier {
 
     if (!hasAllRules) {
       return const PasswordSaveResult(
-        message: 'A nova senha não atende aos requisitos.',
+        message: 'A nova senha nao atende aos requisitos.',
       );
     }
 
     if (newPasswordController.text != confirmPasswordController.text) {
       return const PasswordSaveResult(
-        message: 'A confirmação da senha não confere.',
+        message: 'A confirmacao da senha nao confere.',
       );
     }
 
-    return const PasswordSaveResult(
-      message: 'Senha alterada com sucesso!',
-      shouldCloseSheet: true,
-    );
+    _isSavingPassword = true;
+    notifyListeners();
+
+    try {
+      await _authRepository.updateCurrentUserPassword(
+        currentPassword: currentPasswordController.text,
+        newPassword: newPasswordController.text,
+      );
+
+      return const PasswordSaveResult(
+        message: 'Senha alterada com sucesso!',
+        shouldCloseSheet: true,
+      );
+    } on AuthException catch (error) {
+      return PasswordSaveResult(message: _formatPasswordAuthError(error));
+    } catch (error) {
+      return PasswordSaveResult(
+        message: error.toString().replaceFirst('Exception: ', ''),
+      );
+    } finally {
+      _isSavingPassword = false;
+      notifyListeners();
+    }
   }
 
   void resetPasswordForm() {
@@ -134,6 +192,12 @@ class PersonalDataViewModel extends ChangeNotifier {
     _hideNewPassword = true;
     _hideConfirmPassword = true;
     notifyListeners();
+  }
+
+  void _prefillFromSession() {
+    final user = _authSession.currentUser;
+    nameController.text = user?.name ?? '';
+    emailController.text = user?.email ?? '';
   }
 
   void _bindPrefilledClearBehavior({
@@ -155,6 +219,41 @@ class PersonalDataViewModel extends ChangeNotifier {
 
   void _handlePasswordChange() {
     notifyListeners();
+  }
+
+  String _formatAuthError(String message) {
+    final lowerMessage = message.toLowerCase();
+
+    if (lowerMessage.contains('email rate limit')) {
+      return 'O Supabase bloqueou muitos envios de e-mail agora. Tente novamente mais tarde.';
+    }
+
+    if (lowerMessage.contains('email not confirmed') ||
+        lowerMessage.contains('confirm')) {
+      return 'O Supabase pode pedir confirmacao para trocar o e-mail. Verifique a caixa de entrada.';
+    }
+
+    if (lowerMessage.contains('already registered') ||
+        lowerMessage.contains('already exists')) {
+      return 'Este e-mail ja esta em uso por outra conta.';
+    }
+
+    return 'Nao foi possivel atualizar seus dados. Detalhe: $message';
+  }
+
+  String _formatPasswordAuthError(AuthException error) {
+    final lowerMessage = error.message.toLowerCase();
+
+    if (lowerMessage.contains('invalid login credentials') ||
+        lowerMessage.contains('invalid credentials')) {
+      return 'Senha atual incorreta.';
+    }
+
+    if (lowerMessage.contains('password')) {
+      return 'Nao foi possivel alterar a senha. Verifique os requisitos e tente novamente.';
+    }
+
+    return 'Nao foi possivel alterar a senha. Detalhe: ${error.message}';
   }
 
   @override

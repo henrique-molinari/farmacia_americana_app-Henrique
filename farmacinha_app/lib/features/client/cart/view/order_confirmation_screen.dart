@@ -5,7 +5,6 @@ import 'package:farmacia_app/features/client/orders/detail/view/order_detail_scr
 import 'package:flutter/material.dart';
 
 const Color _confirmationBg = Color(0xFFFFF8F7);
-const Color _confirmationSoft = Color(0xFFFFF0EE);
 const Color _confirmationSoftest = Color(0xFFFDDDD8);
 const Color _confirmationText = Color(0xFF291715);
 const Color _confirmationMuted = Color(0xFF5D3F3C);
@@ -38,7 +37,10 @@ class OrderConfirmationScreen extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () {},
-            icon: const Icon(Icons.more_vert_rounded, color: Pallete.primaryRed),
+            icon: const Icon(
+              Icons.more_vert_rounded,
+              color: Pallete.primaryRed,
+            ),
           ),
         ],
       ),
@@ -262,7 +264,10 @@ class OrderConfirmationScreen extends StatelessWidget {
               left: 20,
               bottom: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.92),
                   borderRadius: BorderRadius.circular(999),
@@ -310,7 +315,9 @@ class OrderConfirmationScreen extends StatelessWidget {
       return 'Em breve';
     }
 
-    final minutes = order.estimatedDelivery!.difference(order.createdAt).inMinutes;
+    final minutes = order.estimatedDelivery!
+        .difference(order.createdAt)
+        .inMinutes;
     final min = minutes <= 20 ? 20 : minutes - 10;
     final max = minutes + 5;
     return '$min-$max min';
@@ -383,10 +390,7 @@ class _FloatingDot extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }

@@ -18,8 +18,6 @@ class BillingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPositive = variation >= 0;
-    final variationColor =
-        isPositive ? const Color(0xFF10B981) : Pallete.primaryRed;
     final variationText =
         '${isPositive ? '+' : ''}${variation.toStringAsFixed(1)}% $periodLabel';
 
@@ -28,10 +26,7 @@ class BillingCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Pallete.primaryRed,
-            Pallete.redDark,
-          ],
+          colors: [Pallete.primaryRed, Pallete.redDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -70,8 +65,7 @@ class BillingCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(99),
@@ -103,10 +97,7 @@ class BillingCard extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Divisória
-          Container(
-            height: 1,
-            color: Colors.white.withOpacity(0.2),
-          ),
+          Container(height: 1, color: Colors.white.withOpacity(0.2)),
 
           const SizedBox(height: 12),
 

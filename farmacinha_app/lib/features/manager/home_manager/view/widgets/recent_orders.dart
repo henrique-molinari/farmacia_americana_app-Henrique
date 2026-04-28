@@ -1,9 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
 import 'package:farmacia_app/features/manager/home_manager/view/orders_history_screen.dart';
+import 'package:farmacia_app/features/manager/shared/data/models/manager_dashboard_models.dart';
+import 'package:flutter/material.dart';
 
 class RecentOrders extends StatefulWidget {
-  const RecentOrders({super.key});
+  final List<ManagerOrderSummary> orders;
+
+  const RecentOrders({super.key, required this.orders});
 
   @override
   State<RecentOrders> createState() => _RecentOrdersState();
@@ -12,33 +15,12 @@ class RecentOrders extends StatefulWidget {
 class _RecentOrdersState extends State<RecentOrders> {
   final TextEditingController _searchController = TextEditingController();
 
-  final List<Map<String, String>> _orders = [
-    {
-      'id': '#CK-9281',
-      'client': 'Ricardo Oliveira',
-      'status': 'ENVIADO',
-      'value': 'R\$ 452,00',
-    },
-    {
-      'id': '#CK-9280',
-      'client': 'Ana Julia Santos',
-      'status': 'PROCESSANDO',
-      'value': 'R\$ 129,90',
-    },
-    {
-      'id': '#CK-9279',
-      'client': 'Marcos Pereira',
-      'status': 'PENDENTE',
-      'value': 'R\$ 78,50',
-    },
-  ];
-
-  List<Map<String, String>> get _filteredOrders {
+  List<ManagerOrderSummary> get _filteredOrders {
     final query = _searchController.text.toLowerCase();
-    if (query.isEmpty) return _orders;
-    return _orders.where((order) {
-      return order['id']!.toLowerCase().contains(query) ||
-          order['client']!.toLowerCase().contains(query);
+    if (query.isEmpty) return widget.orders;
+    return widget.orders.where((order) {
+      return order.id.toLowerCase().contains(query) ||
+          order.customerName.toLowerCase().contains(query);
     }).toList();
   }
 
@@ -50,6 +32,8 @@ class _RecentOrdersState extends State<RecentOrders> {
 
   @override
   Widget build(BuildContext context) {
+    final orders = _filteredOrders;
+
     return Container(
       decoration: BoxDecoration(
         color: Pallete.whiteColor,
@@ -59,7 +43,6 @@ class _RecentOrdersState extends State<RecentOrders> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Cabeçalho e busca
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -74,8 +57,6 @@ class _RecentOrdersState extends State<RecentOrders> {
                   ),
                 ),
                 const SizedBox(height: 14),
-
-                // Campo de busca
                 TextField(
                   controller: _searchController,
                   onChanged: (_) => setState(() {}),
@@ -102,14 +83,27 @@ class _RecentOrdersState extends State<RecentOrders> {
               ],
             ),
           ),
-
-          // Lista de pedidos
           const Divider(height: 1, color: Pallete.borderColor),
-          ..._filteredOrders.map((order) => _OrderItem(order: order)),
-
-          // Botão ver histórico
+          if (orders.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(
+                child: Text(
+                  'Nenhum pedido encontrado',
+                  style: TextStyle(
+                    color: Pallete.textColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            )
+          else
+            ...orders.map((order) => _OrderItem(order: order)),
           InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersHistoryScreen())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const OrdersHistoryScreen()),
+            ),
             borderRadius: const BorderRadius.vertical(
               bottom: Radius.circular(16),
             ),
@@ -124,7 +118,7 @@ class _RecentOrdersState extends State<RecentOrders> {
               ),
               child: const Center(
                 child: Text(
-                  'Ver Histórico Completo',
+                  'Ver Historico Completo',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -141,16 +135,19 @@ class _RecentOrdersState extends State<RecentOrders> {
 }
 
 class _OrderItem extends StatelessWidget {
-  final Map<String, String> order;
+  final ManagerOrderSummary order;
 
   const _OrderItem({required this.order});
 
   Color _statusColor(String status) {
     switch (status) {
       case 'ENVIADO':
+      case 'ENTREGUE':
         return const Color(0xFF10B981);
       case 'PROCESSANDO':
         return const Color(0xFFFAC000);
+      case 'CANCELADO':
+        return Pallete.primaryRed;
       default:
         return const Color(0xFF64748B);
     }
@@ -158,7 +155,7 @@ class _OrderItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _statusColor(order['status']!);
+    final statusColor = _statusColor(order.statusLabel);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -168,31 +165,32 @@ class _OrderItem extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // ID e nome do cliente
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                order['id']!,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Pallete.primaryRed,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  order.id.replaceFirst('PED-', '#'),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Pallete.primaryRed,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                order['client']!,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
+                const SizedBox(height: 2),
+                Text(
+                  order.customerName,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F172A),
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-
-          // Status e valor
+          const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -203,7 +201,7 @@ class _OrderItem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(99),
                 ),
                 child: Text(
-                  order['status']!,
+                  order.statusLabel,
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
@@ -213,7 +211,7 @@ class _OrderItem extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                order['value']!,
+                'R\$ ${order.totalAmount.toStringAsFixed(2).replaceAll('.', ',')}',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,

@@ -72,6 +72,114 @@ class AuthRepository {
     );
   }
 
+  Future<User> updateCurrentUserProfile({
+    required String fullName,
+    required String email,
+  }) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) {
+      throw Exception('Entre com sua conta para alterar seus dados.');
+    }
+
+    final normalizedName = fullName.trim();
+    final normalizedEmail = email.trim().toLowerCase();
+    if (normalizedName.isEmpty) {
+      throw Exception('Informe seu nome completo.');
+    }
+    if (!_isValidEmail(normalizedEmail)) {
+      throw Exception('Informe um e-mail valido.');
+    }
+
+    final currentProfile = await _client
+        .from('profiles')
+        .select('role')
+        .eq('id', authUser.id)
+        .maybeSingle();
+    final currentRole = UserRoleX.fromValue(
+      currentProfile?['role']?.toString(),
+    );
+    final newEmailRole = inferRoleFromEmail(normalizedEmail);
+    if (currentRole == UserRole.cliente && newEmailRole != UserRole.cliente) {
+      throw Exception(
+        'E-mails institucionais devem ser criados pelo cadastro correto, nao pela tela de dados pessoais.',
+      );
+    }
+
+    try {
+      final updatedProfile = await _client
+          .rpc(
+            'update_my_profile_instant',
+            params: {'p_full_name': normalizedName, 'p_email': normalizedEmail},
+          )
+          .single();
+
+      try {
+        await _client.auth.refreshSession();
+      } catch (_) {
+        // The profile was already updated; a fresh login will pick up the email.
+      }
+
+      return User.fromProfileMap(Map<String, dynamic>.from(updatedProfile));
+    } on supabase.PostgrestException catch (error) {
+      if (!_isMissingInstantProfileUpdateRpc(error)) {
+        rethrow;
+      }
+    }
+
+    final currentEmail = (authUser.email ?? '').trim().toLowerCase();
+    supabase.User updatedAuthUser = authUser;
+    if (normalizedEmail != currentEmail) {
+      final response = await _client.auth.updateUser(
+        supabase.UserAttributes(
+          email: normalizedEmail,
+          data: {'full_name': normalizedName},
+        ),
+      );
+      updatedAuthUser = response.user ?? _client.auth.currentUser ?? authUser;
+    } else {
+      final response = await _client.auth.updateUser(
+        supabase.UserAttributes(data: {'full_name': normalizedName}),
+      );
+      updatedAuthUser = response.user ?? _client.auth.currentUser ?? authUser;
+    }
+
+    final effectiveEmail = (updatedAuthUser.email ?? currentEmail)
+        .trim()
+        .toLowerCase();
+    await _client
+        .from('profiles')
+        .update({'full_name': normalizedName, 'email': effectiveEmail})
+        .eq('id', authUser.id);
+
+    final updatedProfile = await _client
+        .from('profiles')
+        .select('id, full_name, email, role')
+        .eq('id', authUser.id)
+        .single();
+
+    return User.fromProfileMap(updatedProfile);
+  }
+
+  Future<void> updateCurrentUserPassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final authUser = _client.auth.currentUser;
+    final email = authUser?.email?.trim();
+    if (authUser == null || email == null || email.isEmpty) {
+      throw Exception('Entre com sua conta para alterar sua senha.');
+    }
+
+    await _client.auth.signInWithPassword(
+      email: email,
+      password: currentPassword,
+    );
+    await _client.auth.updateUser(
+      supabase.UserAttributes(password: newPassword),
+    );
+    await _client.auth.signInWithPassword(email: email, password: newPassword);
+  }
+
   Future<void> signOut() {
     return _client.auth.signOut();
   }
@@ -90,12 +198,16 @@ class AuthRepository {
           .maybeSingle();
 
       if (profile != null) {
+        final normalizedFallbackEmail = (fallbackEmail ?? '').trim();
+        final profileEmail = (profile['email'] ?? '').toString().trim();
         final shouldUpdate =
             profile['role']?.toString() != expectedRole.name ||
             (fallbackName != null &&
                 (profile['full_name'] ?? '').toString().trim().isEmpty) ||
             (fallbackEmail != null &&
-                (profile['email'] ?? '').toString().trim().isEmpty);
+                normalizedFallbackEmail.isNotEmpty &&
+                profileEmail.toLowerCase() !=
+                    normalizedFallbackEmail.toLowerCase());
 
         if (shouldUpdate) {
           await _upsertProfile(
@@ -153,5 +265,19 @@ class AuthRepository {
     };
 
     await _client.from('profiles').upsert(payload);
+  }
+
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+  }
+
+  bool _isMissingInstantProfileUpdateRpc(supabase.PostgrestException error) {
+    final code = error.code?.toLowerCase() ?? '';
+    final message = error.message.toLowerCase();
+
+    return code == 'pgrst202' ||
+        (message.contains('update_my_profile_instant') &&
+            message.contains('schema cache')) ||
+        message.contains('could not find the function');
   }
 }

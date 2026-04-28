@@ -19,7 +19,7 @@ class ProductsRepository {
 
     return response
         .map<Product>(
-          (product) => Product.fromSupabaseMap(product as Map<String, dynamic>),
+          (product) => Product.fromSupabaseMap(product),
         )
         .toList();
   }

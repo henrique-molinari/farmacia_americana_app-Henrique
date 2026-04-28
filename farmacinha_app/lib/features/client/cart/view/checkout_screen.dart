@@ -10,7 +10,6 @@ const Color _checkoutWhite = Colors.white;
 const Color _checkoutText = Color(0xFF291715);
 const Color _checkoutMuted = Color(0xFF5D3F3C);
 const Color _checkoutBlue = Color(0xFF005F93);
-const Color _checkoutYellow = Color(0xFFFCD400);
 const Color _checkoutOlive = Color(0xFF705D00);
 
 class CheckoutScreen extends StatefulWidget {
@@ -131,16 +130,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             child: _ModeChip(
               label: 'Entrega',
               selected:
-                  viewModel.selectedFulfillmentType == CartFulfillmentType.delivery,
-              onTap: () => viewModel.selectFulfillmentType(CartFulfillmentType.delivery),
+                  viewModel.selectedFulfillmentType ==
+                  CartFulfillmentType.delivery,
+              onTap: () =>
+                  viewModel.selectFulfillmentType(CartFulfillmentType.delivery),
             ),
           ),
           Expanded(
             child: _ModeChip(
               label: 'Retirada',
               selected:
-                  viewModel.selectedFulfillmentType == CartFulfillmentType.pickup,
-              onTap: () => viewModel.selectFulfillmentType(CartFulfillmentType.pickup),
+                  viewModel.selectedFulfillmentType ==
+                  CartFulfillmentType.pickup,
+              onTap: () =>
+                  viewModel.selectFulfillmentType(CartFulfillmentType.pickup),
             ),
           ),
         ],
@@ -149,7 +152,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildDeliverySection() {
-    final isDelivery = viewModel.selectedFulfillmentType == CartFulfillmentType.delivery;
+    final isDelivery =
+        viewModel.selectedFulfillmentType == CartFulfillmentType.delivery;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +208,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isDelivery ? viewModel.selectedAddress.icon : Icons.storefront_rounded,
+                  isDelivery
+                      ? viewModel.selectedAddress.icon
+                      : Icons.storefront_rounded,
                   color: isDelivery ? Pallete.primaryRed : _checkoutBlue,
                 ),
               ),
@@ -238,7 +244,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ),
               Icon(
-                isDelivery ? Icons.location_on_rounded : Icons.inventory_2_rounded,
+                isDelivery
+                    ? Icons.location_on_rounded
+                    : Icons.inventory_2_rounded,
                 color: const Color(0xFFD8D0BF),
               ),
             ],
@@ -303,8 +311,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           icon: Icons.credit_card_rounded,
           title: 'Cartão de Crédito',
           subtitle: 'Até 6x sem juros',
-          selected: viewModel.selectedPaymentMethod == PaymentMethod.cardOnDelivery,
-          onTap: () => viewModel.selectPaymentMethod(PaymentMethod.cardOnDelivery),
+          selected:
+              viewModel.selectedPaymentMethod == PaymentMethod.cardOnDelivery,
+          onTap: () =>
+              viewModel.selectPaymentMethod(PaymentMethod.cardOnDelivery),
         ),
         const SizedBox(height: 12),
         _PaymentTile(
@@ -320,8 +330,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           icon: Icons.payments_rounded,
           title: 'Dinheiro',
           subtitle: 'Pague na entrega',
-          selected: viewModel.selectedPaymentMethod == PaymentMethod.cashOnDelivery,
-          onTap: () => viewModel.selectPaymentMethod(PaymentMethod.cashOnDelivery),
+          selected:
+              viewModel.selectedPaymentMethod == PaymentMethod.cashOnDelivery,
+          onTap: () =>
+              viewModel.selectPaymentMethod(PaymentMethod.cashOnDelivery),
         ),
       ],
     );
@@ -355,12 +367,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const SizedBox(height: 14),
               _CheckoutSummaryRow(
-                label: viewModel.selectedFulfillmentType == CartFulfillmentType.delivery
+                label:
+                    viewModel.selectedFulfillmentType ==
+                        CartFulfillmentType.delivery
                     ? 'Entrega'
                     : 'Retirada',
                 value: viewModel.shippingLabel,
-                valueColor:
-                    viewModel.shippingFee == 0 ? _checkoutOlive : _checkoutText,
+                valueColor: viewModel.shippingFee == 0
+                    ? _checkoutOlive
+                    : _checkoutText,
               ),
               const SizedBox(height: 14),
               _CheckoutSummaryRow(
@@ -460,16 +475,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _confirmOrder() async {
-    final order = await viewModel.checkout();
-    if (!mounted || order == null) {
-      return;
-    }
+    try {
+      final order = await viewModel.checkout();
+      if (!mounted || order == null) {
+        return;
+      }
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => OrderConfirmationScreen(order: order),
-      ),
-    );
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => OrderConfirmationScreen(order: order),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error.toString().replaceFirst('Exception: ', ''),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: Pallete.primaryRed,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _openAddressSheet() async {
@@ -694,10 +729,7 @@ class _CheckoutSummaryRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: _checkoutMuted,
-            fontSize: 16,
-          ),
+          style: const TextStyle(color: _checkoutMuted, fontSize: 16),
         ),
         Text(
           value,

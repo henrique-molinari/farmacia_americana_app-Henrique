@@ -105,8 +105,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) =>
-                            DeliveryTrackingScreen(order: order),
+                        builder: (_) => DeliveryTrackingScreen(order: order),
                       ),
                     );
                   },
@@ -259,18 +258,29 @@ class _OrderItemRow extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              item.productImageUrl,
-              width: 48,
-              height: 48,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                width: 48,
-                height: 48,
-                color: Pallete.grayColor,
-                child: const Icon(Icons.image_not_supported, size: 20),
-              ),
-            ),
+            child: item.productImageUrl.isEmpty
+                ? Container(
+                    width: 48,
+                    height: 48,
+                    color: Pallete.grayColor,
+                    child: const Icon(
+                      Icons.medication_rounded,
+                      color: Pallete.primaryRed,
+                      size: 20,
+                    ),
+                  )
+                : Image.network(
+                    item.productImageUrl,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 48,
+                      height: 48,
+                      color: Pallete.grayColor,
+                      child: const Icon(Icons.image_not_supported, size: 20),
+                    ),
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -333,10 +343,7 @@ class _DetailRow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Pallete.textColor,
-                ),
+                style: const TextStyle(fontSize: 11, color: Pallete.textColor),
               ),
               Text(
                 value,

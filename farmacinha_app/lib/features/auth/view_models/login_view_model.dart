@@ -67,7 +67,7 @@ class LoginViewModel extends ChangeNotifier {
     final message = error.toString();
 
     if (message.contains('Invalid login credentials')) {
-      return 'E-mail ou senha invalidos.';
+      return 'E-mail ou senha invalidos. Se voce acabou de trocar o e-mail, use o e-mail antigo ate confirmar a troca no Supabase.';
     }
 
     if (message.contains('Email not confirmed')) {

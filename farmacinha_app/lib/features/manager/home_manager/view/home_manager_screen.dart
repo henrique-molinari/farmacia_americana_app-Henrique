@@ -1,24 +1,69 @@
-import 'package:flutter/material.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
-import 'package:farmacia_app/features/manager/home_manager/view/widgets/kpi_card.dart';
-import 'package:farmacia_app/features/manager/home_manager/view/widgets/sales_chart.dart';
 import 'package:farmacia_app/features/manager/home_manager/view/widgets/best_sellers.dart';
+import 'package:farmacia_app/features/manager/home_manager/view/widgets/kpi_card.dart';
 import 'package:farmacia_app/features/manager/home_manager/view/widgets/recent_orders.dart';
+import 'package:farmacia_app/features/manager/home_manager/view/widgets/sales_chart.dart';
 import 'package:farmacia_app/features/manager/home_manager/view_model/home_manager_view_model.dart';
+import 'package:farmacia_app/features/manager/shared/data/models/manager_dashboard_models.dart';
+import 'package:farmacia_app/features/manager/shared/data/repositories/manager_dashboard_repository.dart';
 import 'package:farmacia_app/features/manager/shared/widgets/notifications_bottom_sheet.dart';
 import 'package:farmacia_app/features/manager/shared/widgets/settings_bottom_sheet.dart';
+import 'package:flutter/material.dart';
 
-class HomeManagerScreen extends StatelessWidget {
+class HomeManagerScreen extends StatefulWidget {
   const HomeManagerScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final viewModel = HomeManagerViewModel();
+  State<HomeManagerScreen> createState() => _HomeManagerScreenState();
+}
 
+class _HomeManagerScreenState extends State<HomeManagerScreen> {
+  final HomeManagerViewModel _viewModel = HomeManagerViewModel();
+  late Future<ManagerDashboardData> _dashboardFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dashboardFuture = ManagerDashboardRepository.instance.fetchDashboardData();
+  }
+
+  Future<void> _refresh() async {
+    final future = ManagerDashboardRepository.instance.fetchDashboardData();
+    setState(() => _dashboardFuture = future);
+    await future;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: _buildAppBar(context),
-      body: _buildBody(context, viewModel),
+      body: FutureBuilder<ManagerDashboardData>(
+        future: _dashboardFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
+            return const Center(
+              child: CircularProgressIndicator(color: Pallete.primaryRed),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return _ErrorState(onRetry: _refresh);
+          }
+
+          final data = snapshot.data;
+          if (data == null) {
+            return _ErrorState(onRetry: _refresh);
+          }
+
+          return RefreshIndicator(
+            color: Pallete.primaryRed,
+            onRefresh: _refresh,
+            child: _buildBody(context, data),
+          );
+        },
+      ),
     );
   }
 
@@ -52,7 +97,7 @@ class HomeManagerScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'FARMÁCIA AMERICANA',
+                'FARMACIA AMERICANA',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
@@ -74,7 +119,10 @@ class HomeManagerScreen extends StatelessWidget {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Pallete.textColor),
+          icon: const Icon(
+            Icons.notifications_outlined,
+            color: Pallete.textColor,
+          ),
           onPressed: () => NotificationsBottomSheet.show(context),
         ),
         IconButton(
@@ -86,14 +134,15 @@ class HomeManagerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBody(BuildContext context, HomeManagerViewModel viewModel) {
+  Widget _buildBody(BuildContext context, ManagerDashboardData data) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${viewModel.greeting}, ${viewModel.managerName}',
+            '${_viewModel.greeting}, ${_viewModel.managerName}',
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -103,12 +152,10 @@ class HomeManagerScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Visão consolidada da rede Farmácia Americana hoje.',
+            'Visao consolidada da rede Farmacia Americana hoje.',
             style: TextStyle(fontSize: 13, color: Pallete.textColor),
           ),
-
           const SizedBox(height: 20),
-
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -116,7 +163,7 @@ class HomeManagerScreen extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Text(
-                      '✅ Relatório gerado com sucesso! Disponível na seção de Documentos do sistema.',
+                      'Relatorio atualizado com os dados do Supabase.',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     backgroundColor: const Color(0xFF10B981),
@@ -131,7 +178,7 @@ class HomeManagerScreen extends StatelessWidget {
               },
               icon: const Icon(Icons.analytics_rounded, size: 20),
               label: const Text(
-                'Gerar Relatório Estratégico',
+                'Gerar Relatorio Estrategico',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
               ),
               style: ElevatedButton.styleFrom(
@@ -146,41 +193,87 @@ class HomeManagerScreen extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(height: 24),
-
           KpiCard(
             label: 'Total de Vendas',
-            value: viewModel.totalSales,
-            trend: viewModel.totalSalesTrend,
-            isPositiveTrend: viewModel.totalSalesPositive,
+            value: _viewModel.totalSales(data),
+            trend: _viewModel.totalSalesTrend(data),
+            isPositiveTrend: _viewModel.totalSalesPositive(data),
             icon: Icons.payments_rounded,
           ),
           const SizedBox(height: 12),
           KpiCard(
             label: 'Novos Clientes',
-            value: viewModel.newClients,
-            trend: viewModel.newClientsTrend,
-            isPositiveTrend: viewModel.newClientsPositive,
+            value: _viewModel.newClients(data),
+            trend: _viewModel.newClientsTrend,
+            isPositiveTrend: true,
             icon: Icons.person_add_rounded,
           ),
           const SizedBox(height: 12),
           KpiCard(
             label: 'Pedidos Pendentes',
-            value: viewModel.pendingOrders,
-            trend: viewModel.pendingOrdersNote,
+            value: _viewModel.pendingOrders(data),
+            trend: _viewModel.pendingOrdersNote,
             isPositiveTrend: false,
             icon: Icons.pending_actions_rounded,
           ),
-
           const SizedBox(height: 24),
-          const SalesChart(),
+          SalesChart(
+            dailyData: data.weeklySalesChart,
+            monthlyData: data.monthlySalesChart,
+          ),
           const SizedBox(height: 24),
-          const BestSellers(),
+          BestSellers(products: data.topProducts),
           const SizedBox(height: 24),
-          const RecentOrders(),
+          RecentOrders(orders: data.recentOrders),
           const SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final Future<void> Function() onRetry;
+
+  const _ErrorState({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_rounded,
+              color: Pallete.primaryRed,
+              size: 42,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Nao foi possivel carregar o painel.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Confira as policies do Supabase para gerente e tente novamente.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Pallete.textColor),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
       ),
     );
   }

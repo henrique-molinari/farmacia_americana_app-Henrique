@@ -28,18 +28,22 @@ class OrdersViewModel extends ChangeNotifier {
     'Cancelados',
   ];
 
-  void _loadOrders() {
+  Future<void> refresh() async {
+    await _loadOrders();
+  }
+
+  Future<void> _loadOrders() async {
     _setLoading(true);
-    Future.delayed(const Duration(milliseconds: 350), () {
-      try {
-        _allOrders = _ordersStore.orders;
-        _applyFilter();
-        _setLoading(false);
-      } catch (e) {
-        _errorMessage = 'Erro ao carregar pedidos.';
-        _setLoading(false);
-      }
-    });
+    try {
+      await _ordersStore.refresh();
+      _allOrders = _ordersStore.orders;
+      _errorMessage = null;
+      _applyFilter();
+    } catch (e) {
+      _errorMessage = 'Erro ao carregar pedidos.';
+    } finally {
+      _setLoading(false);
+    }
   }
 
   void _handleOrdersChanged() {

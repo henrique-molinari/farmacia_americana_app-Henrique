@@ -1,28 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
 import 'package:farmacia_app/features/manager/home_manager/view/all_products_screen.dart';
+import 'package:farmacia_app/features/manager/shared/data/models/manager_dashboard_models.dart';
+import 'package:flutter/material.dart';
 
 class BestSellers extends StatelessWidget {
-  const BestSellers({super.key});
+  final List<ManagerProductSummary> products;
 
-  // Dados estáticos dos produtos mais vendidos
-  static const List<Map<String, String>> _products = [
-    {
-      'name': 'Advanced Multi-Vitamin',
-      'sold': '142 vendidos',
-      'price': 'R\$ 89,90',
-    },
-    {
-      'name': 'Soro Fisiológico Plus',
-      'sold': '118 vendidos',
-      'price': 'R\$ 12,50',
-    },
-    {
-      'name': 'Protetor Solar FPS 50',
-      'sold': '97 vendidos',
-      'price': 'R\$ 45,00',
-    },
-  ];
+  const BestSellers({super.key, required this.products});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +19,6 @@ class BestSellers extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Cabeçalho
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -50,21 +33,31 @@ class BestSellers extends StatelessWidget {
               Icon(Icons.filter_list, color: Pallete.textColor),
             ],
           ),
-
           const SizedBox(height: 20),
-
-          // Lista de produtos
-          Column(
-            children: _products
-                .map((product) => _ProductItem(product: product))
-                .toList(),
-          ),
-
+          if (products.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Nenhuma venda registrada ainda',
+                style: TextStyle(
+                  color: Pallete.textColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          else
+            Column(
+              children: products
+                  .take(3)
+                  .map((product) => _ProductItem(product: product))
+                  .toList(),
+            ),
           const SizedBox(height: 16),
-
-          // Botão ver todos
           OutlinedButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AllProductsScreen())),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AllProductsScreen()),
+            ),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(double.infinity, 40),
               side: BorderSide(color: Pallete.primaryRed.withOpacity(0.3)),
@@ -88,7 +81,7 @@ class BestSellers extends StatelessWidget {
 }
 
 class _ProductItem extends StatelessWidget {
-  final Map<String, String> product;
+  final ManagerProductSummary product;
 
   const _ProductItem({required this.product});
 
@@ -98,7 +91,6 @@ class _ProductItem extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          // Ícone do produto
           Container(
             width: 48,
             height: 48,
@@ -112,16 +104,13 @@ class _ProductItem extends StatelessWidget {
               size: 24,
             ),
           ),
-
           const SizedBox(width: 14),
-
-          // Nome e quantidade vendida
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product['name']!,
+                  product.name,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -131,7 +120,7 @@ class _ProductItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  product['sold']!,
+                  '${product.soldUnits} vendidos',
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -141,10 +130,8 @@ class _ProductItem extends StatelessWidget {
               ],
             ),
           ),
-
-          // Preço
           Text(
-            product['price']!,
+            'R\$ ${product.price.toStringAsFixed(2).replaceAll('.', ',')}',
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
