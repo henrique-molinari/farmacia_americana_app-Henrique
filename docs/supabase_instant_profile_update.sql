@@ -50,6 +50,12 @@ begin
     raise exception 'E-mails institucionais devem ser criados pelo cadastro correto.';
   end if;
 
+  if profile_role = 'gerente'
+    and normalized_email not like '%@americanaadm.com'
+  then
+    raise exception 'O e-mail do gerente precisa terminar com @americanaadm.com.';
+  end if;
+
   if exists (
     select 1
     from auth.users

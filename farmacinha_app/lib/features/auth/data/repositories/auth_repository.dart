@@ -104,6 +104,11 @@ class AuthRepository {
         'E-mails institucionais devem ser criados pelo cadastro correto, nao pela tela de dados pessoais.',
       );
     }
+    if (currentRole == UserRole.gerente && newEmailRole != UserRole.gerente) {
+      throw Exception(
+        'O e-mail do gerente precisa terminar com @americanaadm.com.',
+      );
+    }
 
     try {
       final updatedProfile = await _client

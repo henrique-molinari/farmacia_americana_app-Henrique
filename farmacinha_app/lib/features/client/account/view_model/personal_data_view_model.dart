@@ -19,7 +19,6 @@ class PersonalDataViewModel extends ChangeNotifier {
       isPrefilled: () => _isPhonePrefilled,
       setPrefilled: (value) => _isPhonePrefilled = value,
     );
-    newPasswordController.addListener(_handlePasswordChange);
   }
 
   final AuthSessionViewModel _authSession = AuthSessionViewModel.instance;
@@ -65,13 +64,6 @@ class PersonalDataViewModel extends ChangeNotifier {
   bool get hideConfirmPassword => _hideConfirmPassword;
   bool get isSavingPersonalData => _isSavingPersonalData;
   bool get isSavingPassword => _isSavingPassword;
-
-  bool get hasMinLength => newPasswordController.text.length >= 6;
-  bool get hasUppercase =>
-      RegExp(r'[A-Z]').hasMatch(newPasswordController.text);
-  bool get hasLowercase =>
-      RegExp(r'[a-z]').hasMatch(newPasswordController.text);
-  bool get hasNumber => RegExp(r'[0-9]').hasMatch(newPasswordController.text);
 
   List<TextInputFormatter> get cpfInputFormatters => <TextInputFormatter>[
     FilteringTextInputFormatter.digitsOnly,
@@ -140,17 +132,12 @@ class PersonalDataViewModel extends ChangeNotifier {
       return const PasswordSaveResult(message: 'Alteracao em andamento.');
     }
 
-    final hasAllRules =
-        hasMinLength && hasUppercase && hasLowercase && hasNumber;
-
     if (currentPasswordController.text.isEmpty) {
       return const PasswordSaveResult(message: 'Informe a senha atual.');
     }
 
-    if (!hasAllRules) {
-      return const PasswordSaveResult(
-        message: 'A nova senha nao atende aos requisitos.',
-      );
+    if (newPasswordController.text.trim().isEmpty) {
+      return const PasswordSaveResult(message: 'Informe a nova senha.');
     }
 
     if (newPasswordController.text != confirmPasswordController.text) {
@@ -217,10 +204,6 @@ class PersonalDataViewModel extends ChangeNotifier {
     });
   }
 
-  void _handlePasswordChange() {
-    notifyListeners();
-  }
-
   String _formatAuthError(String message) {
     final lowerMessage = message.toLowerCase();
 
@@ -250,7 +233,7 @@ class PersonalDataViewModel extends ChangeNotifier {
     }
 
     if (lowerMessage.contains('password')) {
-      return 'Nao foi possivel alterar a senha. Verifique os requisitos e tente novamente.';
+      return 'O Supabase recusou essa senha. Verifique o tamanho minimo configurado no painel.';
     }
 
     return 'Nao foi possivel alterar a senha. Detalhe: ${error.message}';
@@ -267,7 +250,6 @@ class PersonalDataViewModel extends ChangeNotifier {
     cpfController.dispose();
     phoneController.dispose();
     currentPasswordController.dispose();
-    newPasswordController.removeListener(_handlePasswordChange);
     newPasswordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();

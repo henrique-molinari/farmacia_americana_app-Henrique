@@ -414,14 +414,6 @@ class _ChangePasswordSheet extends StatelessWidget {
                   obscureText: viewModel.hideConfirmPassword,
                   onToggleVisibility: viewModel.toggleConfirmPasswordVisibility,
                 ),
-                const SizedBox(height: 14),
-                _buildRequirement(
-                  'Mínimo de 6 caracteres',
-                  viewModel.hasMinLength,
-                ),
-                _buildRequirement('1 letra maiúscula', viewModel.hasUppercase),
-                _buildRequirement('1 letra minúscula', viewModel.hasLowercase),
-                _buildRequirement('1 caractere numérico', viewModel.hasNumber),
                 const SizedBox(height: 18),
                 SizedBox(
                   width: double.infinity,
@@ -473,30 +465,6 @@ class _ChangePasswordSheet extends StatelessWidget {
           onPressed: onToggleVisibility,
           icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility),
         ),
-      ),
-    );
-  }
-
-  Widget _buildRequirement(String text, bool met) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        children: [
-          Icon(
-            met ? Icons.check_circle : Icons.cancel,
-            size: 16,
-            color: met ? Colors.green : Pallete.primaryRed,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: TextStyle(
-              color: met ? Colors.green : Pallete.primaryRed,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
-          ),
-        ],
       ),
     );
   }
