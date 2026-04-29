@@ -28,6 +28,8 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Precisamos acessar suas imagens para anexar fotos no atendimento da Farmacia Americana.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Precisamos acessar a camera para tirar fotos dos produtos cadastrados.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

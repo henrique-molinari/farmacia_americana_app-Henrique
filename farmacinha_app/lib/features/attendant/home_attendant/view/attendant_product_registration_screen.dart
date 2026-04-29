@@ -1,0 +1,885 @@
+import 'dart:typed_data';
+
+import 'package:farmacia_app/core/palette/pallete.dart';
+import 'package:farmacia_app/features/attendant/home_attendant/view_model/attendant_product_registration_view_model.dart';
+import 'package:farmacia_app/features/attendant/home_attendant/view_model/attendant_profile_data_store.dart';
+import 'package:farmacia_app/features/client/home_client/data/models/product_model.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
+class AttendantProductRegistrationScreen extends StatefulWidget {
+  const AttendantProductRegistrationScreen({super.key});
+
+  @override
+  State<AttendantProductRegistrationScreen> createState() =>
+      _AttendantProductRegistrationScreenState();
+}
+
+class _AttendantProductRegistrationScreenState
+    extends State<AttendantProductRegistrationScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late final AttendantProductRegistrationViewModel _viewModel;
+  bool _loadedArguments = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = AttendantProductRegistrationViewModel();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_loadedArguments) return;
+    _loadedArguments = true;
+
+    final args = ModalRoute.of(context)?.settings.arguments;
+    _viewModel.loadEditingProduct(args is Product ? args : null);
+  }
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectImageSource() async {
+    FocusScope.of(context).unfocus();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E2E2),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                _ImageSourceTile(
+                  icon: Icons.photo_camera_rounded,
+                  title: 'Tirar foto',
+                  subtitle: 'Usar a camera do dispositivo',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                const SizedBox(height: 10),
+                _ImageSourceTile(
+                  icon: Icons.photo_library_rounded,
+                  title: 'Escolher da galeria',
+                  subtitle: 'Selecionar PNG ou JPG salvo',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final result = await _viewModel.pickImage(source);
+    if (result.message != null && mounted) {
+      _showSnackBar(result.message!);
+    }
+  }
+
+  Future<void> _selectDate() async {
+    final selectedDate = await showDatePicker(
+      context: context,
+      initialDate: _viewModel.registrationDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: Pallete.primaryRed,
+                ),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+    );
+
+    if (selectedDate != null) {
+      _viewModel.setRegistrationDate(selectedDate);
+    }
+  }
+
+  Future<void> _saveProduct() async {
+    if (_viewModel.isSaving) return;
+
+    final form = _formKey.currentState;
+    if (form == null || !form.validate()) return;
+
+    final result = await _viewModel.saveProduct();
+    if (!mounted) return;
+
+    _showSnackBar(result.message);
+    if (result.success) {
+      Navigator.pop(context, true);
+    }
+  }
+
+  Future<void> _generateDescription() async {
+    if (_viewModel.isGeneratingDescription) return;
+
+    if (_viewModel.nameController.text.trim().isNotEmpty &&
+        _viewModel.descriptionController.text.trim().isNotEmpty) {
+      final shouldReplace = await _confirmReplaceDescription();
+      if (!shouldReplace) return;
+    }
+
+    final result = await _viewModel.generateProductDescription();
+    if (!mounted) return;
+
+    _showSnackBar(result.message);
+  }
+
+  Future<bool> _confirmReplaceDescription() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Substituir descrição?'),
+          content: const Text(
+            'Já existe uma descrição preenchida. Deseja substituir pela '
+            'descrição gerada pela IA?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Pallete.primaryRed,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Substituir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _viewModel,
+      builder: (context, _) {
+        final profile = _viewModel.profile;
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF9F9F9),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFFF9F9F9),
+            elevation: 0,
+            surfaceTintColor: const Color(0xFFF9F9F9),
+            leading: IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Pallete.primaryRed,
+              ),
+            ),
+            titleSpacing: 0,
+            title: Text(
+              _viewModel.isEditing ? 'Editar Produto' : 'Cadastrar Produto',
+              style: const TextStyle(
+                color: Pallete.primaryRed,
+                fontSize: 21,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 18),
+                child: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: const Color(0xFFE2E2E2),
+                  child: Text(
+                    _initials(profile.fullName),
+                    style: const TextStyle(
+                      color: Color(0xFF5D3F3C),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          body: SafeArea(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(22, 22, 22, 112),
+                children: [
+                  _ImagePickerBox(
+                    bytes: _viewModel.selectedImageBytes,
+                    imageUrl: _viewModel.existingImageUrl,
+                    onTap: _selectImageSource,
+                  ),
+                  const SizedBox(height: 34),
+                  const _FieldLabel(label: 'NOME DO PRODUTO'),
+                  _ProductTextField(
+                    controller: _viewModel.nameController,
+                    hintText: 'Ex: Paracetamol 500mg',
+                    validator: (value) =>
+                        _viewModel.requiredField(value, 'Informe o nome.'),
+                  ),
+                  const SizedBox(height: 14),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ElevatedButton.icon(
+                      onPressed: _viewModel.isGeneratingDescription
+                          ? null
+                          : _generateDescription,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Pallete.primaryRed,
+                        disabledForegroundColor:
+                            Pallete.primaryRed.withOpacity(0.6),
+                        elevation: 0,
+                        side: BorderSide(
+                          color: Pallete.primaryRed.withOpacity(0.28),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 13,
+                        ),
+                      ),
+                      icon: _viewModel.isGeneratingDescription
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Pallete.primaryRed,
+                              ),
+                            )
+                          : const Icon(Icons.auto_awesome, size: 20),
+                      label: Text(
+                        _viewModel.isGeneratingDescription
+                            ? 'Gerando...'
+                            : 'Gerar descrição com IA',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const _FieldLabel(label: 'DESCRIÇÃO'),
+                  _ProductTextField(
+                    controller: _viewModel.descriptionController,
+                    hintText:
+                        'Insira as especificações técnicas e indicações do medicamento...',
+                    maxLines: 3,
+                    validator: (value) => _viewModel.requiredField(
+                      value,
+                      'Informe a descrição.',
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const _FieldLabel(label: 'CATEGORIA'),
+                  DropdownButtonFormField<String>(
+                    value: _viewModel.selectedCategory,
+                    icon: const Icon(Icons.unfold_more_rounded),
+                    items: _viewModel.categories
+                        .map(
+                          (category) => DropdownMenuItem(
+                            value: category,
+                            child: Text(category),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: _viewModel.selectCategory,
+                    decoration: _inputDecoration('Selecione uma categoria'),
+                    validator: (value) =>
+                        value == null ? 'Selecione uma categoria.' : null,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _FieldLabel(label: 'PREÇO (R\$)'),
+                            _ProductTextField(
+                              controller: _viewModel.priceController,
+                              hintText: 'R\$ 0,00',
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              validator: _viewModel.validatePrice,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 22),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _FieldLabel(label: 'ESTOQUE ATUAL'),
+                            _ProductTextField(
+                              controller: _viewModel.stockController,
+                              hintText: '0',
+                              keyboardType: TextInputType.number,
+                              validator: _viewModel.validateStock,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  const _FieldLabel(label: 'DATA DE CADASTRO'),
+                  GestureDetector(
+                    onTap: _selectDate,
+                    child: AbsorbPointer(
+                      child: _ProductTextField(
+                        controller: _viewModel.dateController,
+                        hintText: 'mm/dd/yyyy',
+                        suffixIcon: Icons.calendar_today_rounded,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 34),
+                  _ControlledMedicationSwitch(
+                    value: _viewModel.isControlled,
+                    onChanged: _viewModel.setControlled,
+                  ),
+                  const SizedBox(height: 34),
+                  const Divider(color: Color(0xFFECECEC)),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'REGISTRADO POR',
+                    style: TextStyle(
+                      color: Color(0xFF5D3F3C),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 3,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _RegisteredByCard(profile: profile),
+                ],
+              ),
+            ),
+          ),
+          bottomNavigationBar: SafeArea(
+            minimum: const EdgeInsets.fromLTRB(22, 10, 22, 18),
+            child: SizedBox(
+              height: 58,
+              child: ElevatedButton.icon(
+                onPressed: _viewModel.isSaving ? null : _saveProduct,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE31B23),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      const Color(0xFFE31B23).withOpacity(0.6),
+                  elevation: 8,
+                  shadowColor: Pallete.primaryRed.withOpacity(0.25),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                icon: _viewModel.isSaving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.save_rounded, size: 22),
+                label: Text(
+                  _viewModel.isSaving ? 'Salvando...' : 'Salvar Produto',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  InputDecoration _inputDecoration(String hintText) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(color: Color(0xFFB8AAAA)),
+      filled: true,
+      fillColor: const Color(0xFFEFEFEF),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: BorderSide(
+          color: Pallete.primaryRed.withOpacity(0.35),
+          width: 1.5,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: Pallete.primaryRed),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+    );
+  }
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return 'FA';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+}
+
+class _ImagePickerBox extends StatelessWidget {
+  final Uint8List? bytes;
+  final String? imageUrl;
+  final VoidCallback onTap;
+
+  const _ImagePickerBox({
+    required this.bytes,
+    required this.imageUrl,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasLocalImage = bytes != null;
+    final hasRemoteImage = imageUrl != null && imageUrl!.isNotEmpty;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        height: 202,
+        decoration: BoxDecoration(
+          color: const Color(0xFFEFF3F4),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.all(10),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (hasLocalImage)
+                Image.memory(bytes!, fit: BoxFit.cover)
+              else if (hasRemoteImage)
+                Image.network(imageUrl!, fit: BoxFit.cover)
+              else
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FFFF),
+                    border: Border.all(
+                      color: const Color(0xFFE7BDB8),
+                      width: 1.5,
+                      strokeAlign: BorderSide.strokeAlignInside,
+                    ),
+                  ),
+                  child: CustomPaint(
+                    painter: const _MedicineBackgroundPainter(),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              if (!hasLocalImage && !hasRemoteImage)
+                const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.add_a_photo_rounded,
+                        color: Pallete.primaryRed,
+                        size: 46,
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'ADICIONAR IMAGEM',
+                        style: TextStyle(
+                          color: Color(0xFF5D3F3C),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'PNG ou JPG até 5MB',
+                        style: TextStyle(
+                          color: Color(0xFF9E8F8D),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (hasLocalImage || hasRemoteImage)
+                Positioned(
+                  right: 12,
+                  bottom: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.edit_rounded, color: Colors.white, size: 16),
+                        SizedBox(width: 6),
+                        Text(
+                          'Trocar',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final int maxLines;
+  final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+  final IconData? suffixIcon;
+
+  const _ProductTextField({
+    required this.controller,
+    required this.hintText,
+    this.maxLines = 1,
+    this.keyboardType,
+    this.validator,
+    this.suffixIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      validator: validator,
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Color(0xFFB8AAAA)),
+        suffixIcon: suffixIcon == null ? null : Icon(suffixIcon, size: 20),
+        filled: true,
+        fillColor: const Color(0xFFEFEFEF),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: BorderSide(
+            color: Pallete.primaryRed.withOpacity(0.35),
+            width: 1.5,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: const BorderSide(color: Pallete.primaryRed),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 22,
+          vertical: 18,
+        ),
+      ),
+    );
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  final String label;
+
+  const _FieldLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 6, bottom: 10),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Color(0xFF5D3F3C),
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _ControlledMedicationSwitch extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _ControlledMedicationSwitch({
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9F9F9),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFECECEC)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5DDE0),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.warning_rounded,
+              color: Pallete.primaryRed,
+              size: 30,
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Medicamento Controlado',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Exige retenção de receita médica',
+                  style: TextStyle(color: Color(0xFF8F7E7C), fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            activeColor: Pallete.primaryRed,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RegisteredByCard extends StatelessWidget {
+  final AttendantProfileData profile;
+
+  const _RegisteredByCard({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 21,
+            backgroundColor: const Color(0xFFEFF3F4),
+            child: Text(
+              profile.fullName.substring(0, 1).toUpperCase(),
+              style: const TextStyle(
+                color: Pallete.primaryRed,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  profile.fullName,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  profile.roleDescription,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF9E8F8D),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ImageSourceTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ImageSourceTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      tileColor: const Color(0xFFF4F4F4),
+      leading: Icon(icon, color: Pallete.primaryRed),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w800),
+      ),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right_rounded),
+    );
+  }
+}
+
+class _MedicineBackgroundPainter extends CustomPainter {
+  const _MedicineBackgroundPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFE6EFF1).withOpacity(0.62)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5;
+
+    for (var i = 0; i < 5; i++) {
+      final left = 32.0 + (i * 42);
+      final bottle = RRect.fromRectAndRadius(
+        Rect.fromLTWH(left, size.height * 0.48, 24, size.height * 0.32),
+        const Radius.circular(6),
+      );
+      canvas.drawRRect(bottle, paint);
+      canvas.drawRect(
+        Rect.fromLTWH(left + 5, size.height * 0.42, 14, 16),
+        paint,
+      );
+    }
+
+    final flaskPaint = Paint()
+      ..color = const Color(0xFFE6EFF1).withOpacity(0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(size.width - 92, size.height * 0.2, 58, size.height * 0.6),
+        const Radius.circular(12),
+      ),
+      flaskPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 63, size.height * 0.2),
+      Offset(size.width - 63, 16),
+      flaskPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}

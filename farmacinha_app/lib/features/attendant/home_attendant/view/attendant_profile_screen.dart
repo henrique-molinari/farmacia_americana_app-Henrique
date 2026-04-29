@@ -119,6 +119,16 @@ class _AttendantProfileScreenState extends State<AttendantProfileScreen> {
                         },
                       ),
                       _MenuRow(
+                        icon: Icons.add_business_rounded,
+                        label: 'Cadastro de Produtos',
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.attendantProductRegistration,
+                          );
+                        },
+                      ),
+                      _MenuRow(
                         icon: Icons.person_outline_rounded,
                         label: 'Dados Pessoais',
                         onTap: () {
