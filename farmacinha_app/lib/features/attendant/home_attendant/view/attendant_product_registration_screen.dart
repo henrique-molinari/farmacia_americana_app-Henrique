@@ -140,6 +140,52 @@ class _AttendantProductRegistrationScreenState
     }
   }
 
+  Future<void> _generateDescription() async {
+    if (_viewModel.isGeneratingDescription) return;
+
+    if (_viewModel.nameController.text.trim().isNotEmpty &&
+        _viewModel.descriptionController.text.trim().isNotEmpty) {
+      final shouldReplace = await _confirmReplaceDescription();
+      if (!shouldReplace) return;
+    }
+
+    final result = await _viewModel.generateProductDescription();
+    if (!mounted) return;
+
+    _showSnackBar(result.message);
+  }
+
+  Future<bool> _confirmReplaceDescription() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Substituir descrição?'),
+          content: const Text(
+            'Já existe uma descrição preenchida. Deseja substituir pela '
+            'descrição gerada pela IA?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Pallete.primaryRed,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Substituir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -204,6 +250,48 @@ class _AttendantProductRegistrationScreenState
                     hintText: 'Ex: Paracetamol 500mg',
                     validator: (value) =>
                         _viewModel.requiredField(value, 'Informe o nome.'),
+                  ),
+                  const SizedBox(height: 14),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ElevatedButton.icon(
+                      onPressed: _viewModel.isGeneratingDescription
+                          ? null
+                          : _generateDescription,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Pallete.primaryRed,
+                        disabledForegroundColor:
+                            Pallete.primaryRed.withOpacity(0.6),
+                        elevation: 0,
+                        side: BorderSide(
+                          color: Pallete.primaryRed.withOpacity(0.28),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 13,
+                        ),
+                      ),
+                      icon: _viewModel.isGeneratingDescription
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Pallete.primaryRed,
+                              ),
+                            )
+                          : const Icon(Icons.auto_awesome, size: 20),
+                      label: Text(
+                        _viewModel.isGeneratingDescription
+                            ? 'Gerando...'
+                            : 'Gerar descrição com IA',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   const _FieldLabel(label: 'DESCRIÇÃO'),

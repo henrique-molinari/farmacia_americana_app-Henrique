@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:farmacia_app/features/attendant/home_attendant/data/repositories/attendant_products_repository.dart';
+import 'package:farmacia_app/features/attendant/home_attendant/data/repositories/product_ai_repository.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view_model/attendant_profile_data_store.dart';
 import 'package:farmacia_app/features/client/home_client/data/models/product_model.dart';
 import 'package:flutter/material.dart';
@@ -10,15 +11,18 @@ import 'package:permission_handler/permission_handler.dart';
 class AttendantProductRegistrationViewModel extends ChangeNotifier {
   AttendantProductRegistrationViewModel({
     AttendantProductsRepository? repository,
+    ProductAiRepository? productAiRepository,
     AttendantProfileDataStore? profileStore,
     ImagePicker? imagePicker,
   })  : _repository = repository ?? AttendantProductsRepository.instance,
+        _productAiRepository = productAiRepository ?? ProductAiRepository(),
         _profileStore = profileStore ?? AttendantProfileDataStore.instance,
         _imagePicker = imagePicker ?? ImagePicker() {
     dateController.text = _formatDate(_registrationDate);
   }
 
   final AttendantProductsRepository _repository;
+  final ProductAiRepository _productAiRepository;
   final AttendantProfileDataStore _profileStore;
   final ImagePicker _imagePicker;
 
@@ -46,6 +50,7 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
   DateTime _registrationDate = DateTime.now();
   bool _isControlled = false;
   bool _isSaving = false;
+  bool _isGeneratingDescription = false;
   bool _loadedProduct = false;
 
   String? get editingProductId => _editingProductId;
@@ -55,6 +60,7 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
   DateTime get registrationDate => _registrationDate;
   bool get isControlled => _isControlled;
   bool get isSaving => _isSaving;
+  bool get isGeneratingDescription => _isGeneratingDescription;
   AttendantProfileData get profile => _profileStore.data;
   bool get isEditing => _editingProductId != null && _editingProductId!.isNotEmpty;
 
@@ -165,6 +171,46 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     }
   }
 
+  Future<ProductDescriptionGenerationResult> generateProductDescription() async {
+    final productName = nameController.text.trim();
+    if (productName.isEmpty) {
+      return const ProductDescriptionGenerationResult(
+        success: false,
+        message: 'Informe o nome do produto antes de gerar a descrição.',
+      );
+    }
+
+    _isGeneratingDescription = true;
+    notifyListeners();
+
+    try {
+      final description =
+          await _productAiRepository.generateDescription(productName);
+
+      if (description.trim().isEmpty) {
+        return const ProductDescriptionGenerationResult(
+          success: false,
+          message: 'A IA não retornou uma descrição válida.',
+        );
+      }
+
+      descriptionController.text = description;
+
+      return const ProductDescriptionGenerationResult(
+        success: true,
+        message: 'Descrição gerada com sucesso.',
+      );
+    } on Object {
+      return const ProductDescriptionGenerationResult(
+        success: false,
+        message: 'Não foi possível gerar a descrição. Tente novamente.',
+      );
+    } finally {
+      _isGeneratingDescription = false;
+      notifyListeners();
+    }
+  }
+
   String? requiredField(String? value, String message) {
     return value == null || value.trim().isEmpty ? message : null;
   }
@@ -230,6 +276,7 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     priceController.dispose();
     stockController.dispose();
     dateController.dispose();
+    _productAiRepository.dispose();
     super.dispose();
   }
 }
@@ -249,6 +296,16 @@ class ProductSaveResult {
   final String message;
 
   const ProductSaveResult({
+    required this.success,
+    required this.message,
+  });
+}
+
+class ProductDescriptionGenerationResult {
+  final bool success;
+  final String message;
+
+  const ProductDescriptionGenerationResult({
     required this.success,
     required this.message,
   });
