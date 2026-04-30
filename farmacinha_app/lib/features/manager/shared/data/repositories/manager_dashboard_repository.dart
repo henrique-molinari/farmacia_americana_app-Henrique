@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:farmacia_app/core/utils/date_time_utils.dart';
 import 'package:farmacia_app/features/auth/data/models/user_model.dart';
 import 'package:farmacia_app/features/client/orders/data/models/order_model.dart';
 import 'package:farmacia_app/features/manager/shared/data/models/manager_dashboard_models.dart';
@@ -97,8 +98,7 @@ class ManagerDashboardRepository {
 
   ManagerOrderSummary _orderSummaryFromMap(Map<String, dynamic> map) {
     final createdAt =
-        DateTime.tryParse(map['created_at']?.toString() ?? '') ??
-        DateTime.now();
+        tryParseUtcToLocal(map['created_at']?.toString()) ?? DateTime.now();
     final rawTotal = map['total_amount'];
     final profile = map['profiles'] is Map<String, dynamic>
         ? map['profiles'] as Map<String, dynamic>
@@ -156,9 +156,7 @@ class ManagerDashboardRepository {
       final monthStart = DateTime(now.year, now.month);
       final clients = response.whereType<Map<String, dynamic>>().toList();
       final newClientsThisMonth = clients.where((client) {
-        final createdAt = DateTime.tryParse(
-          client['created_at']?.toString() ?? '',
-        );
+        final createdAt = tryParseUtcToLocal(client['created_at']?.toString());
         return createdAt != null && !createdAt.isBefore(monthStart);
       }).length;
 

@@ -1,3 +1,5 @@
+import 'package:farmacia_app/core/utils/date_time_utils.dart';
+
 enum OrderStatus {
   pending,
   confirmed,
@@ -183,8 +185,7 @@ class Order {
               .toList(growable: false)
         : <OrderItem>[];
     final createdAt =
-        DateTime.tryParse(map['created_at']?.toString() ?? '') ??
-        DateTime.now();
+        tryParseUtcToLocal(map['created_at']?.toString()) ?? DateTime.now();
 
     return Order(
       id: _formatOrderId(map['id'], createdAt),
