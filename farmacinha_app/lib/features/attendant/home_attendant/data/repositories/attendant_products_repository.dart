@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:farmacia_app/core/utils/date_time_utils.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AttendantProductPayload {
@@ -30,7 +31,7 @@ class AttendantProductPayload {
       'category': category,
       'price': price,
       'stock_quantity': stockQuantity,
-      'registration_date': registrationDate.toIso8601String(),
+      'registration_date': localDateToUtcIso(registrationDate),
       'is_controlled': isControlled,
       'is_active': true,
       if (imageUrl != null) 'image_url': imageUrl,
@@ -80,7 +81,7 @@ class AttendantProductsRepository {
     String? productId,
   }) async {
     final normalizedExtension = extension.replaceAll('.', '').toLowerCase();
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final timestamp = nowUtc().millisecondsSinceEpoch;
     final owner = _client.auth.currentUser?.id ?? 'anonymous';
     final safeProductId = productId?.isNotEmpty == true ? productId : 'new';
     final filePath =
