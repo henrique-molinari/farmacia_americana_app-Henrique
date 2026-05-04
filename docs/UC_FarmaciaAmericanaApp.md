@@ -785,7 +785,7 @@
 
 ### Diagrama de Atividades
 
-v<img width="648" height="517" alt="image" src="https://github.com/user-attachments/assets/64e02696-11c8-44dd-a516-34fc6393b976" />
+<img width="648" height="517" alt="image" src="https://github.com/user-attachments/assets/64e02696-11c8-44dd-a516-34fc6393b976" />
 
 > **Diretriz de Implementação:** Todas as regras de negócio devem ser validadas tanto na camada de interface (Flutter) para melhor UX quanto na camada de serviços (Backend) para garantir a integridade dos dados. Referência: RNs e RNFs deste documento.
 
