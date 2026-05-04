@@ -4,19 +4,19 @@ Este documento define as diretrizes lógicas e as restrições operacionais que 
 
 ---
 
-## 1. Atendimento e Inteligência Artificial (IA) 
+## 1. Fluxo de Atendimento e Inteligência Artificial (ChatBot e IA) 
 
-**RN01 — Transbordo Automático para Humano** Se a IA não identificar a intenção do usuário ou o produto desejado após 2 (duas) tentativas consecutivas, a conversa deve ser movida automaticamente para a fila de "Atendimento Humano" com prioridade alta.
+**RN01 — Navegação por Árvore de Decisão ** O atendimento inicial deve ser conduzido através de um menu de opções (botões), onde o usuário seleciona o fluxo desejado (ex: Comprar, Enviar Receita, Falar com Atendente). Não haverá processamento de texto livre nesta etapa. 
 
-**RN02 — Registro de Orientações Técnicas** Toda orientação técnica (posologia, efeitos colaterais ou dúvidas sobre bula) fornecida pela IA deve ser salva em um log inalterável vinculado ao ID da conversa para fins de auditoria.
+**RN02 — Transbordo para Atendimento Humano ** Caso o usuário selecione a opção de "Falar com Atendente" ou finalize um fluxo de seleção que exija intervenção (como validação de receita), a conversa deve ser encaminhada para a fila do colaborador responsável. 
 
-**RN03 — Análise de Receita via IA (OCR)** A IA deve realizar a leitura preliminar (OCR) de receitas médicas para agilizar o preenchimento, porém, os dados extraídos só serão validados no sistema após confirmação humana (Atendente ou Farmacêutico).
+**RN03 — Assistente de Cadastro (IA Generativa)** Exclusivo para a tela de Atendente/Gerente: ao cadastrar um novo item, o sistema disponibiliza uma ferramenta de IA que gera automaticamente o campo de "Descrição" e sugere "Tags/Categorias" com base no nome do produto, visando a celeridade do processo operacional. 
 
 ---
 
 ## 2. Gestão de Medicamentos e Saúde 
 
-**RN04 — Trava de Medicamento Controlado** Produtos classificados como "Medicamentos Controlados" (Tarja Preta/Vermelha sob controle) bloqueiam o checkout até que o Farmacêutico realize a validação digital da foto da receita enviada.
+**RN04 — Validação Humana de Receitas** Medicamentos que exigem retenção de receita só terão sua venda autorizada após o Atendente/Farmacêutico visualizar a imagem enviada pelo cliente e validar manualmente os dados no painel administrativo. 
 
 **RN05 — Persistência de Dados Críticos (API/BD)** Para cada venda realizada, o sistema deve obrigatoriamente persistir via API no Banco de Dados os seguintes dados:
 * Identificação do(s) Produto(s);
