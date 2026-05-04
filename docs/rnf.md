@@ -10,7 +10,7 @@ Este documento estabelece os critérios de qualidade, segurança, performance e 
 O aplicativo deve manter uma taxa de atualização de 60 FPS (quadros por segundo) estáveis em dispositivos homologados, garantindo transições fluidas e ausência de travamentos (*jank*).
 
 **RNF02 — Tempo de Resposta da IA**
-O processamento da linguagem natural e o retorno da resposta da Inteligência Artificial no chat não devem exceder o tempo máximo de **5 segundos**.
+O processamento para o chat e a geração automática de descrições de produtos não devem exceder o tempo máximo de 5 segundos. 
 
 **RNF03 — Capacidade de Carga**
 O backend deve ser dimensionado para suportar no mínimo **150 usuários** simultâneos realizando transações de chat e consultas ao catálogo sem degradação de performance.
@@ -64,8 +64,8 @@ Em caso de perda temporária de conexão, o aplicativo Flutter deve enfileirar a
 **RNF14 — Padrão de Arquitetura (MVVM)**
 O desenvolvimento do software deve seguir rigorosamente a documentação de estrutura e o padrão de projeto **MVVM (Model-View-ViewModel)** no Flutter, garantindo a separação clara entre lógica de negócio, estados da UI e modelos de dados.
 
-**RNF15 — Precisão do OCR (IA)**
-A inteligência artificial responsável pela extração de dados de receitas deve apresentar uma acurácia mínima de 85% em imagens com condições normais de iluminação.
+**RNF15 — Coerência da IA de Cadastro**
+A inteligência artificial de geração de descrições deve garantir que os textos gerados estejam em conformidade com o nome e categoria do produto fornecidos, evitando alucinações de dados (informações inventadas) em 95% das gerações. 
 
-**RNF16 — Arquitetura de Microserviços**
-O backend deve ser modularizado (microserviços ou módulos isolados) para permitir atualizações independentes na IA sem impactar os módulos de pagamento, catálogo ou autenticação.
+**RNF16 — Arquitetura de Módulos de IA**
+O backend deve permitir que o motor de geração de texto (cadastro) e o motor do chat sejam atualizados ou substituídos sem impactar as funções vitais de catálogo e checkout. 
