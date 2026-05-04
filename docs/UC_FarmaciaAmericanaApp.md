@@ -57,8 +57,6 @@
 | **UC15** | Navegar no Catálogo e Consultar Produto | Cliente | RF02, RF03 | RN07, RN10 |
 | **UC16** | Receber e Processar Notificação Push | Sistema | — | RN08, RN13 |
 
-<img width="1005" height="872" alt="image" src="https://github.com/user-attachments/assets/efa219cf-a260-40c1-a2ae-1c8e8e64a7c5" />
-
 ---
 
 ## UC01 — Realizar Venda
