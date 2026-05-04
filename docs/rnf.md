@@ -67,5 +67,5 @@ O desenvolvimento do software deve seguir rigorosamente a documentação de estr
 **RNF15 — Coerência da IA de Cadastro**
 A inteligência artificial de geração de descrições deve garantir que os textos gerados estejam em conformidade com o nome e categoria do produto fornecidos, evitando alucinações de dados (informações inventadas) em 95% das gerações. 
 
-**RNF16 — Arquitetura de Módulos de IA **
+**RNF16 — Arquitetura de Módulos de IA**
 O backend deve permitir que o motor de geração de texto (cadastro) e o motor do chat sejam atualizados ou substituídos sem impactar as funções vitais de catálogo e checkout. 
