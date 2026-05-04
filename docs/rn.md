@@ -6,9 +6,9 @@ Este documento define as diretrizes lógicas e as restrições operacionais que 
 
 ## 1. Fluxo de Atendimento e Inteligência Artificial (ChatBot e IA) 
 
-**RN01 — Navegação por Árvore de Decisão ** O atendimento inicial deve ser conduzido através de um menu de opções (botões), onde o usuário seleciona o fluxo desejado (ex: Comprar, Enviar Receita, Falar com Atendente). Não haverá processamento de texto livre nesta etapa. 
+**RN01 — Navegação por Árvore de Decisão** O atendimento inicial deve ser conduzido através de um menu de opções (botões), onde o usuário seleciona o fluxo desejado (ex: Comprar, Enviar Receita, Falar com Atendente). Não haverá processamento de texto livre nesta etapa. 
 
-**RN02 — Transbordo para Atendimento Humano ** Caso o usuário selecione a opção de "Falar com Atendente" ou finalize um fluxo de seleção que exija intervenção (como validação de receita), a conversa deve ser encaminhada para a fila do colaborador responsável. 
+**RN02 — Transbordo para Atendimento Humano** Caso o usuário selecione a opção de "Falar com Atendente" ou finalize um fluxo de seleção que exija intervenção (como validação de receita), a conversa deve ser encaminhada para a fila do colaborador responsável. 
 
 **RN03 — Assistente de Cadastro (IA Generativa)** Exclusivo para a tela de Atendente/Gerente: ao cadastrar um novo item, o sistema disponibiliza uma ferramenta de IA que gera automaticamente o campo de "Descrição" e sugere "Tags/Categorias" com base no nome do produto, visando a celeridade do processo operacional. 
 
