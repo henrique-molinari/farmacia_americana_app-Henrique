@@ -7,7 +7,6 @@ import 'package:farmacia_app/features/manager/home_manager/view_model/home_manag
 import 'package:farmacia_app/features/manager/shared/data/models/manager_dashboard_models.dart';
 import 'package:farmacia_app/features/manager/shared/data/repositories/manager_dashboard_repository.dart';
 import 'package:farmacia_app/features/manager/shared/widgets/notifications_bottom_sheet.dart';
-import 'package:farmacia_app/features/manager/shared/widgets/settings_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 
 class HomeManagerScreen extends StatefulWidget {
@@ -124,10 +123,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
             color: Pallete.textColor,
           ),
           onPressed: () => NotificationsBottomSheet.show(context),
-        ),
-        IconButton(
-          icon: const Icon(Icons.settings_outlined, color: Pallete.textColor),
-          onPressed: () => SettingsBottomSheet.show(context),
         ),
         const SizedBox(width: 4),
       ],

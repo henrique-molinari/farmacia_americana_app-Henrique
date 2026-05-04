@@ -6,7 +6,6 @@ import 'package:farmacia_app/features/manager/bi_manager/view/widgets/comparison
 import 'package:farmacia_app/features/manager/bi_manager/view_model/bi_manager_view_model.dart';
 import 'package:farmacia_app/features/manager/shared/data/models/manager_dashboard_models.dart';
 import 'package:farmacia_app/features/manager/shared/widgets/notifications_bottom_sheet.dart';
-import 'package:farmacia_app/features/manager/shared/widgets/settings_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 
 class BiManagerScreen extends StatefulWidget {
@@ -173,10 +172,6 @@ class _BiManagerScreenState extends State<BiManagerScreen> {
             color: Pallete.textColor,
           ),
           onPressed: () => NotificationsBottomSheet.show(context),
-        ),
-        IconButton(
-          icon: const Icon(Icons.settings_outlined, color: Pallete.textColor),
-          onPressed: () => SettingsBottomSheet.show(context),
         ),
         const SizedBox(width: 4),
       ],

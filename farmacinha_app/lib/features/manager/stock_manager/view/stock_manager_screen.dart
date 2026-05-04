@@ -1,7 +1,6 @@
 import 'package:farmacia_app/core/palette/pallete.dart';
 import 'package:farmacia_app/features/manager/shared/data/models/manager_dashboard_models.dart';
 import 'package:farmacia_app/features/manager/shared/widgets/notifications_bottom_sheet.dart';
-import 'package:farmacia_app/features/manager/shared/widgets/settings_bottom_sheet.dart';
 import 'package:farmacia_app/features/manager/stock_manager/view/widgets/category_filter_chips.dart';
 import 'package:farmacia_app/features/manager/stock_manager/view/widgets/stock_product_card.dart';
 import 'package:farmacia_app/features/manager/stock_manager/view_model/stock_manager_view_model.dart';
@@ -117,10 +116,6 @@ class _StockManagerScreenState extends State<StockManagerScreen> {
             color: Pallete.textColor,
           ),
           onPressed: () => NotificationsBottomSheet.show(context),
-        ),
-        IconButton(
-          icon: const Icon(Icons.settings_outlined, color: Pallete.textColor),
-          onPressed: () => SettingsBottomSheet.show(context),
         ),
         const SizedBox(width: 4),
       ],
