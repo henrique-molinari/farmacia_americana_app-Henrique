@@ -118,45 +118,45 @@
 
 ---
 
-## UC02 — Identificar ou Cadastrar Cliente
+## UC02 — Consultar Histórico de Cliente
 
 | Campo | Descrição |
 |---|---|
-| **Ator(es)** | Atendente, Sistema (IA), Cliente |
-| **Descrição** | Identifica um cliente existente via CPF ou realiza o registro de um novo usuário para permitir a continuidade da venda e rastreamento de transações. |
-| **Pré-condições** | Usuário autenticado (UC10); Fluxo de venda ou atendimento iniciado. |
-| **Pós-condições** | Cliente vinculado à transação; Dados persistidos no banco de dados com segurança (RNF06). |
-| **RFs relacionados** | RF01 |
-| **RNs relacionadas** | — |
-| **RNFs relacionados** | RNF07 |
+| **Ator(es)** | Atendente, Gerente/Dono |
+| **Descrição** | Permite que o atendente localize um cliente pelo nome para visualizar seus dados e acessar o histórico completo de conversas (logs) e pedidos. |
+| **Pré-condições** | Usuário autenticado no Painel Administrativo. |
+| **Pós-condições** | Histórico de conversas e dados do cliente exibidos na tela. |
+| **RFs relacionados** | RF13, RF15 |
+| **RNs relacionadas** | RN05 (Persistência de Logs) |
+| **RNFs relacionados** | RNF07 (Segurança de Dados) |
 
 ### Fluxo Principal
 
-1. Sistema (ou Atendente) solicita o CPF do cliente via interface de chat ou formulário.
-2. Atendente/Cliente insere o CPF no sistema.
-3. Sistema realiza a busca na base de dados centralizada.
-4. Se localizado: Sistema exibe os dados (Nome, Telefone, Endereço) e vincula ao pedido.
-5. Se não localizado: Sistema abre formulário de novo cadastro.
-6. Atendente/Cliente preenche dados obrigatórios (Nome, E-mail, Telefone, Endereço).
-7. Sistema valida os dados e confirma o salvamento.
+1. O Atendente acessa a seção "Clientes" ou "Histórico de Atendimento" no painel.
+2. O Atendente digita o **nome** (ou parte dele) no campo de busca.
+3. O Sistema realiza a filtragem em tempo real na base de dados.
+4. O Sistema exibe uma lista de clientes correspondentes ao nome digitado.
+5. O Atendente seleciona o cliente desejado.
+6. O Sistema carrega o perfil do cliente e exibe cronologicamente todas as **conversas** (logs do chat) e vendas associadas.
+7. O Atendente navega pelas conversas passadas para entender o histórico de solicitações.
 
 ### Fluxos Alternativos / Exceções
 
 | ID | Nome | Descrição |
 |---|---|---|
-| **FA01** | CPF Inválido | Sistema identifica erro de dígito verificador, exibe alerta e solicita nova inserção. |
-| **FA02** | Cliente com Restrição | Sistema identifica bloqueio administrativo no perfil do cliente e notifica o Atendente para autorização superior. |
-| **FA03** | Dados Incompletos | Sistema sinaliza campos obrigatórios não preenchidos e impede o avanço até completar o cadastro. |
+| **FA01** | Cliente não encontrado | Sistema exibe mensagem "Nenhum resultado encontrado" e sugere verificar a grafia. |
+| **FA02** | Filtro por Período | O Atendente pode refinar a busca por data para encontrar conversas de um mês específico. |
+| **FE01** | Sem Histórico | Se o cliente nunca interagiu via chat, o sistema exibe apenas os dados básicos e informa que não há logs disponíveis. |
 
 ### Relacionamentos
 
 | Tipo | Casos de Uso |
 |---|---|
-| **Include** | Faz parte do UC01 — Realizar Venda |
+| **Extended by** | UC01 — Realizar Venda (Pode ser consultado durante uma venda ativa) |
 
 ### Diagrama de Atividades
 
-<img width="358" height="422" alt="image" src="https://github.com/user-attachments/assets/574148f2-d573-4bdc-8f3d-b88cfeb56caa" />
+<img width="493" height="529" alt="image" src="https://github.com/user-attachments/assets/5ba26778-10e2-4ffd-8332-466c7f3d77a9" />
 
 ---
 
