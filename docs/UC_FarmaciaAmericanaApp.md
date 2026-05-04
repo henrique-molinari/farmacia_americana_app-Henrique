@@ -164,41 +164,43 @@
 
 | Campo | Descrição |
 |---|---|
-| **Ator(es)** | Atendente, Farmacêutico, Cliente, Sistema (Automático) |
-| **Descrição** | Verifica a disponibilidade física de um item na unidade atual antes de permitir sua adição ao carrinho, evitando sobrevenda e garantindo integridade do estoque. |
-| **Pré-condições** | Produto identificado por nome ou ID; Unidade física selecionada; Sincronização de estoque atualizada. |
-| **Pós-condições** | Saldo exibido em tempo real; Validação de quantidade confirmada ou rejeitada. |
-| **RFs relacionados** | RF14 |
-| **RNs relacionadas** | RN07 |
-| **RNFs relacionados** | RNF04 |
+| **Ator(es)** | Atendente, Cliente, Sistema (Automático) |
+| **Descrição** | Verifica a disponibilidade de um item em tempo real antes de permitir a adição ao carrinho ou finalização via chat, evitando a venda de itens sem saldo. |
+| **Pré-condições** | Produto identificado por nome, categoria ou ID; Conexão ativa com o banco de dados. |
+| **Pós-condições** | Saldo validado; Item permitido ou bloqueado para venda. |
+| **RFs relacionados** | RF02, RF03, RF05, RF14 |
+| **RNs relacionadas** | RN07 (Bloqueio de estoque) |
+| **RNFs relacionados** | RNF04 (Sincronização em tempo real < 5s) |
 
 ### Fluxo Principal
 
-1. Atendente/Cliente pesquisa o produto durante a venda ou navegação pelo catálogo.
-2. Sistema consulta a tabela de estoque da unidade em tempo real (RNF04 — máx. 30 segundos).
-3. Sistema retorna o saldo disponível e indicador visual de disponibilidade.
-4. Atendente/Cliente confirma a adição da quantidade desejada.
-5. Se quantidade ≤ saldo: Sistema aceita e reserva temporariamente o item (bloqueio de estoque).
-6. Se quantidade > saldo: Sistema rejeita a operação (RN07) e oferece alternativa (quantidade máxima ou sugestão de similar).
+1. O Atendente (Painel) ou Cliente (App) pesquisa um produto ou navega pelas categorias.
+2. O Sistema consulta a base de dados de estoque em tempo real.
+3. O Sistema retorna o saldo disponível. 
+4. **No App:** O botão "Adicionar" ou "Comprar Agora" só fica ativo se o saldo for > 0.
+5. **No Chat:** O Sistema (Árvore de Decisão) informa a disponibilidade antes de avançar para o checkout.
+6. O usuário define a quantidade desejada.
+7. Se **quantidade solicitada ≤ saldo**: O sistema permite a reserva temporária no carrinho.
+8. Se **quantidade solicitada > saldo**: O sistema barra a operação, exibe o saldo real e sugere ajuste (RN07).
 
 ### Fluxos Alternativos / Exceções
 
 | ID | Nome | Descrição |
 |---|---|---|
-| **FA01** | Produto sem Estoque | Sistema exibe mensagem "Indisponível no momento" e oferece opção de notificação quando voltar a estar em estoque. |
-| **FA02** | Última Unidade em Estoque | Sistema exibe alerta visual para o Atendente, sugerindo confirmação dupla da venda. |
-| **FA03** | Sincronização Desatualizada | Se a sincronização demorar mais de 30 segundos, sistema exibe mensagem de aviso e oferece opção de aguardar ou usar última data conhecida. |
+| **FA01** | Item Indisponível | O sistema oculta o botão de compra e exibe a tag "Esgotado" no catálogo. |
+| **FA02** | Conflito de Checkout | Se dois clientes tentarem comprar a última unidade simultaneamente, o sistema valida no momento do pagamento e cancela o que finalizar por último. |
+| **FE01** | Falha de Sincronização | Caso o banco não responda em 5s, o sistema exibe erro de conexão e impede a venda por segurança. |
 
 ### Relacionamentos
 
 | Tipo | Casos de Uso |
 |---|---|
-| **Include** | Faz parte do UC01 — Realizar Venda |
-| **Include** | Faz parte do UC15 — Navegar no Catálogo |
+| **Include** | Parte integrante do UC01 — Realizar Venda |
+| **Include** | Parte integrante do UC15 — Navegar no Catálogo |
 
 ### Diagrama de Atividades
 
-<img width="358" height="422" alt="image" src="https://github.com/user-attachments/assets/574148f2-d573-4bdc-8f3d-b88cfeb56caa" />
+<img width="754" height="545" alt="image" src="https://github.com/user-attachments/assets/da008c6e-d811-48aa-86dc-318e998f4dcd" />
 
 ---
 
