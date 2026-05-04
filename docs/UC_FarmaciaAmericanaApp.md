@@ -1,7 +1,6 @@
 # Casos de Uso (UC) — Ecossistema Farmácia Americana
 
 > Este documento detalha as interações funcionais entre os atores e o sistema, servindo como guia para o desenvolvimento da lógica de negócio no Flutter e Backend.
->
 
 ---
 
@@ -12,18 +11,17 @@
 - [UC11 — Gerenciar Perfil e Conta](#uc11--gerenciar-perfil-e-conta)
 - [UC14 — Gerenciar Acessos e Perfis (RBAC)](#uc14--gerenciar-acessos-e-perfis-rbac)
 
-### Domínio: Atendimento
+### Domínio: Atendimento e IA
 - [UC04 — Realizar Transbordo de Atendimento](#uc04--realizar-transbordo-de-atendimento)
-- [UC13 — Configurar e Gerenciar IA](#uc13--configurar-e-gerenciar-ia)
+- [UC13 — Cadastrar Produto (com Assistência de IA)](#uc13--cadastrar-produto-com-assistência-de-ia)
 
-### Domínio: Operação
+### Domínio: Operação Comercial
 - [UC01 — Realizar Venda](#uc01--realizar-venda)
-- [UC02 — Identificar ou Cadastrar Cliente](#uc02--identificar-ou-cadastrar-cliente)
+- [UC02 — Consultar Histórico de Cliente](#uc02--consultar-histórico-de-cliente)
 - [UC03 — Consultar e Verificar Estoque](#uc03--consultar-e-verificar-estoque)
 - [UC15 — Navegar no Catálogo e Consultar Produto](#uc15--navegar-no-catálogo-e-consultar-produto)
-- [UC17 — Gerenciar Catálogo de Produtos](#uc17--gerenciar-catálogo-de-produtos)
 
-### Domínio: Regulatório
+### Domínio: Regulatório e Auditoria
 - [UC05 — Validar Receita Médica](#uc05--validar-receita-médica)
 - [UC06 — Persistir Dados de Auditoria](#uc06--persistir-dados-de-auditoria)
 
@@ -32,33 +30,32 @@
 - [UC12 — Rastrear Pedido em Tempo Real](#uc12--rastrear-pedido-em-tempo-real)
 - [UC16 — Receber e Processar Notificação Push](#uc16--receber-e-processar-notificação-push)
 
-### Domínio: Gestão
+### Domínio: Gestão e BI
 - [UC07 — Gerenciar Unidade](#uc07--gerenciar-unidade)
-- [UC09 — Analisar Performance e Auditoria (BI)](#uc09--analisar-performance-e-auditoria-bi)
+- [UC09 — Consultar Performance (BI Mobile)](#uc09--consultar-performance-bi-mobile)
 
 ---
 
-## Cobertura Completa
+## Matriz de Rastreabilidade
 
-| UC | Nome | Domínio | RFs | RNs | RNFs |
-|---|---|---|---|---|---|
-| UC01 | Realizar Venda | Operação | RF03, RF05 | RN01, RN07, RN08, RN09, RN10 | — |
-| UC02 | Identificar ou Cadastrar Cliente | Operação | RF01 | — | RNF07 |
-| UC03 | Consultar e Verificar Estoque | Operação | RF14 | RN07 | RNF04 |
-| UC04 | Realizar Transbordo de Atendimento | Atendimento | RF04, RF11 | RN01, RN02 | RNF02 |
-| UC05 | Validar Receita Médica | Regulatório | RF06, RF13 | RN04, RN05, RN06 | RNF15 |
-| UC06 | Persistir Dados de Auditoria | Regulatório | RF15 | RN05, RN06 | RNF05, RNF06, RNF08 |
-| UC07 | Gerenciar Unidade | Gestão | RF14, RF18 | RN12 | RNF04 |
-| UC08 | Processar Pagamento e Confirmar Recebimento | Financeiro | RF07, RF08 | RN08, RN09, RN10 | — |
-| UC09 | Analisar Performance e Auditoria (BI) | Gestão | RF16, RF17 | RN11 | — |
-| UC10 | Autenticar Usuário | Acesso | RF01 | — | RNF05, RNF07 |
-| UC11 | Gerenciar Perfil e Conta | Acesso | RF10 | — | RNF06 |
-| UC12 | Rastrear Pedido em Tempo Real | Logística | RF09 | RN13 | RNF04 |
-| UC13 | Configurar e Gerenciar IA | Atendimento | RF03, RF05 | RN01, RN02, RN03 | RNF02, RNF15, RNF16 |
-| UC14 | Gerenciar Acessos e Perfis (RBAC) | Acesso | — | RN11 | RNF07 |
-| UC15 | Navegar no Catálogo e Consultar Produto | Operação | RF02 | — | RNF01, RNF09, RNF10 |
-| UC16 | Receber e Processar Notificação Push | Logística | — | RN13 | RNF04 |
-| UC17 | Gerenciar Catálogo de Produtos | Operação | RF02, RF14 | RN03, RN07 | RNF04, RNF15 |
+| UC | Nome | Ator Principal | RFs Relacionados | RNs Relacionadas |
+|---|---|---|---|---|
+| **UC01** | Realizar Venda | Cliente | RF02, RF03, RF05, RF07, RF08, RF15 | RN01, RN02, RN04, RN05, RN07, RN08, RN10 |
+| **UC02** | Consultar Histórico de Cliente | Atendente | RF13, RF15 | RN05 |
+| **UC03** | Consultar e Verificar Estoque | Sistema | RF02, RF03, RF05, RF14 | RN07 |
+| **UC04** | Realizar Transbordo de Atendimento | Cliente | RF04, RF11, RF12 | RN01, RN02, RN04 |
+| **UC05** | Validar Receita Médica | Farmacêutico | RF06, RF13, RF15 | RN04, RN05, RN06 |
+| **UC06** | Persistir Dados de Auditoria | Sistema | RF15 | RN05, RN06 |
+| **UC07** | Gerenciar Unidade | Gerente/Dono | RF14, RF18 | RN11, RN12 |
+| **UC08** | Processar Pagamento e Confirmar Recebimento | Cliente | RF07, RF08 | RN08, RN09, RN10 |
+| **UC09** | Consultar Performance (BI Mobile) | Gerente/Dono | RF16, RF17 | RN11 |
+| **UC10** | Autenticar Usuário | Todos | RF01 | RN11 |
+| **UC11** | Gerenciar Perfil e Conta | Cliente | RF10 | — |
+| **UC12** | Rastrear Pedido em Tempo Real | Cliente | RF09 | RN08, RN10, RN13 |
+| **UC13** | Cadastrar Produto (com Assistência de IA) | Atendente | RF03, RF05 | RN03, RN04, RN07 |
+| **UC14** | Gerenciar Acessos e Perfis (RBAC) | Administrador | — | RN11 |
+| **UC15** | Navegar no Catálogo e Consultar Produto | Cliente | RF02, RF03 | RN07, RN10 |
+| **UC16** | Receber e Processar Notificação Push | Sistema | — | RN08, RN13 |
 
 <img width="1005" height="872" alt="image" src="https://github.com/user-attachments/assets/efa219cf-a260-40c1-a2ae-1c8e8e64a7c5" />
 
