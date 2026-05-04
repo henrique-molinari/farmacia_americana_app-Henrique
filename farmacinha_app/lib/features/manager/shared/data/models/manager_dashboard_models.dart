@@ -24,6 +24,7 @@ class ManagerProductSummary {
     int soldUnits = 0,
   }) {
     final rawPrice = map['price'];
+    final rawStock = map['stock'] ?? map['stock_quantity'];
 
     return ManagerProductSummary(
       id: (map['id'] ?? '').toString(),
@@ -32,9 +33,9 @@ class ManagerProductSummary {
       price: rawPrice is num
           ? rawPrice.toDouble()
           : double.tryParse(rawPrice?.toString() ?? '0') ?? 0,
-      stock: map['stock'] is num
-          ? (map['stock'] as num).toInt()
-          : int.tryParse(map['stock']?.toString() ?? '0') ?? 0,
+      stock: rawStock is num
+          ? rawStock.toInt()
+          : int.tryParse(rawStock?.toString() ?? '0') ?? 0,
       imageUrl: (map['image_url'] ?? '').toString(),
       soldUnits: soldUnits,
     );

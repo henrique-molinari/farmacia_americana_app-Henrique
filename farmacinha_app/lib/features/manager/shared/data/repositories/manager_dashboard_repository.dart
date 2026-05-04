@@ -17,7 +17,9 @@ class ManagerDashboardRepository {
   Future<ManagerDashboardData> fetchDashboardData() async {
     final orders = await fetchOrders();
     final soldByProductId = _soldUnitsByProductId(orders);
-    final products = await fetchProducts(soldByProductId: soldByProductId);
+    final products = await _fetchProductsSafely(
+      soldByProductId: soldByProductId,
+    );
     final clientStats = await _fetchClientStats();
     final now = DateTime.now();
 
@@ -44,10 +46,7 @@ class ManagerDashboardRepository {
   Future<List<ManagerProductSummary>> fetchProducts({
     Map<String, int> soldByProductId = const {},
   }) async {
-    final response = await _client
-        .from('products')
-        .select('id, name, category, price, stock, image_url, is_active')
-        .order('name');
+    final response = await _client.from('products').select().order('name');
 
     return response
         .map<ManagerProductSummary>((product) {
@@ -65,13 +64,130 @@ class ManagerDashboardRepository {
     final response = await _client
         .from('orders')
         .select(
-          'id, user_id, status, payment_method, total_amount, delivery_address, created_at, profiles(full_name, email), order_items(product_id, product_name, unit_price, quantity, products(image_url))',
+          'id, user_id, status, payment_method, total_amount, delivery_address, created_at',
         )
         .order('created_at', ascending: false);
 
-    return response
-        .map<ManagerOrderSummary>((order) => _orderSummaryFromMap(order))
+    final orders = response.whereType<Map<String, dynamic>>().toList(
+      growable: false,
+    );
+    final profilesByUserId = await _fetchProfilesByUserId(orders);
+    final itemsByOrderId = await _fetchOrderItemsByOrderId(orders);
+
+    return orders
+        .map<ManagerOrderSummary>((order) {
+          final userId = order['user_id']?.toString() ?? '';
+          return _orderSummaryFromMap(
+            order,
+            profile: profilesByUserId[userId],
+            items:
+                itemsByOrderId[order['id']?.toString()] ?? const <OrderItem>[],
+          );
+        })
         .toList(growable: false);
+  }
+
+  Future<List<ManagerProductSummary>> _fetchProductsSafely({
+    required Map<String, int> soldByProductId,
+  }) async {
+    try {
+      return await fetchProducts(soldByProductId: soldByProductId);
+    } catch (_) {
+      return const <ManagerProductSummary>[];
+    }
+  }
+
+  Future<Map<String, Map<String, dynamic>>> _fetchProfilesByUserId(
+    List<Map<String, dynamic>> orders,
+  ) async {
+    final userIds = orders
+        .map((order) => order['user_id']?.toString() ?? '')
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    if (userIds.isEmpty) {
+      return const <String, Map<String, dynamic>>{};
+    }
+
+    try {
+      final response = await _client
+          .from('profiles')
+          .select('id, full_name, email')
+          .inFilter('id', userIds);
+
+      final result = <String, Map<String, dynamic>>{};
+      for (final profile in response.whereType<Map<String, dynamic>>()) {
+        final id = profile['id']?.toString() ?? '';
+        if (id.isEmpty) {
+          continue;
+        }
+        result[id] = profile;
+      }
+      return result;
+    } catch (_) {
+      return const <String, Map<String, dynamic>>{};
+    }
+  }
+
+  Future<Map<String, List<OrderItem>>> _fetchOrderItemsByOrderId(
+    List<Map<String, dynamic>> orders,
+  ) async {
+    final orderIds = orders
+        .map((order) => order['id']?.toString() ?? '')
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    if (orderIds.isEmpty) {
+      return const <String, List<OrderItem>>{};
+    }
+
+    try {
+      final response = await _client
+          .from('order_items')
+          .select('order_id, product_id, product_name, unit_price, quantity')
+          .inFilter('order_id', orderIds);
+
+      final result = <String, List<OrderItem>>{};
+      for (final item in response.whereType<Map<String, dynamic>>()) {
+        final orderId = item['order_id']?.toString() ?? '';
+        if (orderId.isEmpty) {
+          continue;
+        }
+        result
+            .putIfAbsent(orderId, () => <OrderItem>[])
+            .add(OrderItem.fromSupabaseMap(item));
+      }
+      return result;
+    } catch (_) {
+      return const <String, List<OrderItem>>{};
+    }
+  }
+
+  ManagerOrderSummary _orderSummaryFromMap(
+    Map<String, dynamic> map, {
+    Map<String, dynamic>? profile,
+    List<OrderItem> items = const <OrderItem>[],
+  }) {
+    final resolvedProfile = profile ?? const <String, dynamic>{};
+    final createdAt =
+        tryParseUtcToLocal(map['created_at']?.toString()) ?? DateTime.now();
+    final rawTotal = map['total_amount'];
+
+    return ManagerOrderSummary(
+      id: _formatOrderId(map['id'], createdAt),
+      customerName: _resolveCustomerName(resolvedProfile, map['user_id']),
+      customerEmail: (resolvedProfile['email'] ?? '').toString(),
+      status: OrderStatusExtension.fromDatabaseValue(map['status']?.toString()),
+      paymentMethod: PaymentMethodExtension.fromDatabaseValue(
+        map['payment_method']?.toString(),
+      ),
+      totalAmount: rawTotal is num
+          ? rawTotal.toDouble()
+          : double.tryParse(rawTotal?.toString() ?? '0') ?? 0,
+      createdAt: createdAt,
+      deliveryAddress: (map['delivery_address'] ?? '').toString(),
+      items: items,
+    );
   }
 
   Future<ManagerBiData> fetchBiData() async {
@@ -93,37 +209,6 @@ class ManagerDashboardRepository {
         'Semanal': _topProductsForPeriod(orders, _PeriodType.weekly),
         'Mensal': _topProductsForPeriod(orders, _PeriodType.monthly),
       },
-    );
-  }
-
-  ManagerOrderSummary _orderSummaryFromMap(Map<String, dynamic> map) {
-    final createdAt =
-        tryParseUtcToLocal(map['created_at']?.toString()) ?? DateTime.now();
-    final rawTotal = map['total_amount'];
-    final profile = map['profiles'] is Map<String, dynamic>
-        ? map['profiles'] as Map<String, dynamic>
-        : <String, dynamic>{};
-    final items = map['order_items'] is List
-        ? (map['order_items'] as List)
-              .whereType<Map<String, dynamic>>()
-              .map(OrderItem.fromSupabaseMap)
-              .toList(growable: false)
-        : <OrderItem>[];
-
-    return ManagerOrderSummary(
-      id: _formatOrderId(map['id'], createdAt),
-      customerName: _resolveCustomerName(profile, map['user_id']),
-      customerEmail: (profile['email'] ?? '').toString(),
-      status: OrderStatusExtension.fromDatabaseValue(map['status']?.toString()),
-      paymentMethod: PaymentMethodExtension.fromDatabaseValue(
-        map['payment_method']?.toString(),
-      ),
-      totalAmount: rawTotal is num
-          ? rawTotal.toDouble()
-          : double.tryParse(rawTotal?.toString() ?? '0') ?? 0,
-      createdAt: createdAt,
-      deliveryAddress: (map['delivery_address'] ?? '').toString(),
-      items: items,
     );
   }
 

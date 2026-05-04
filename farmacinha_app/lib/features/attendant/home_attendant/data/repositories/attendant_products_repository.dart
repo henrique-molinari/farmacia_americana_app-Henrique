@@ -30,12 +30,22 @@ class AttendantProductPayload {
       'description': description,
       'category': category,
       'price': price,
-      'stock_quantity': stockQuantity,
       'registration_date': localDateToUtcIso(registrationDate),
       'is_controlled': isControlled,
       'is_active': true,
       if (imageUrl != null) 'image_url': imageUrl,
       if (userId != null) 'registered_by': userId,
+    };
+  }
+
+  Map<String, dynamic> toSupabaseMapWithStockColumn(
+    String stockColumn, {
+    String? imageUrl,
+    String? userId,
+  }) {
+    return {
+      ...toSupabaseMap(imageUrl: imageUrl, userId: userId),
+      stockColumn: stockQuantity,
     };
   }
 }
@@ -64,15 +74,47 @@ class AttendantProductsRepository {
             extension: imageExtension ?? 'jpg',
             productId: payload.id,
           );
+    await _saveProductWithCompatibleStockColumn(
+      payload: payload,
+      imageUrl: imageUrl,
+      userId: userId,
+    );
+  }
 
-    final data = payload.toSupabaseMap(imageUrl: imageUrl, userId: userId);
+  Future<void> _saveProductWithCompatibleStockColumn({
+    required AttendantProductPayload payload,
+    required String? imageUrl,
+    required String? userId,
+  }) async {
+    Object? lastError;
+    const stockColumns = ['stock', 'stock_quantity'];
 
-    if (payload.id == null || payload.id!.isEmpty) {
-      await _client.from(_productsTable).insert(data);
-      return;
+    for (final stockColumn in stockColumns) {
+      final data = payload.toSupabaseMapWithStockColumn(
+        stockColumn,
+        imageUrl: imageUrl,
+        userId: userId,
+      );
+
+      try {
+        if (payload.id == null || payload.id!.isEmpty) {
+          await _client.from(_productsTable).insert(data);
+        } else {
+          await _client.from(_productsTable).update(data).eq('id', payload.id!);
+        }
+        return;
+      } on PostgrestException catch (error) {
+        lastError = error;
+        if (_isMissingColumn(error, stockColumn)) {
+          continue;
+        }
+        rethrow;
+      }
     }
 
-    await _client.from(_productsTable).update(data).eq('id', payload.id!);
+    if (lastError != null) {
+      throw lastError!;
+    }
   }
 
   Future<String> _uploadProductImage({
@@ -84,10 +126,11 @@ class AttendantProductsRepository {
     final timestamp = nowUtc().millisecondsSinceEpoch;
     final owner = _client.auth.currentUser?.id ?? 'anonymous';
     final safeProductId = productId?.isNotEmpty == true ? productId : 'new';
-    final filePath =
-        '$owner/$safeProductId-$timestamp.$normalizedExtension';
+    final filePath = '$owner/$safeProductId-$timestamp.$normalizedExtension';
 
-    await _client.storage.from(_productImagesBucket).uploadBinary(
+    await _client.storage
+        .from(_productImagesBucket)
+        .uploadBinary(
           filePath,
           bytes,
           fileOptions: FileOptions(
@@ -110,5 +153,12 @@ class AttendantProductsRepository {
       default:
         return 'image/jpeg';
     }
+  }
+
+  bool _isMissingColumn(PostgrestException error, String columnName) {
+    final message = error.message.toLowerCase();
+    final normalizedColumn = columnName.toLowerCase();
+    return message.contains(normalizedColumn) &&
+        (message.contains('column') || message.contains('schema cache'));
   }
 }
