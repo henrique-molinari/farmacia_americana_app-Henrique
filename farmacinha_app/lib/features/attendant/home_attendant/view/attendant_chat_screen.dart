@@ -168,7 +168,10 @@ class _AttendantChatScreenState extends State<AttendantChatScreen> {
           }
 
           if (index == 1) {
-            Navigator.pushReplacementNamed(context, AppRoutes.attendantSearch);
+            Navigator.pushReplacementNamed(
+              context,
+              AppRoutes.attendantProductRegistration,
+            );
             return;
           }
 
@@ -184,7 +187,10 @@ class _AttendantChatScreenState extends State<AttendantChatScreen> {
             icon: Icon(Icons.home_rounded),
             label: 'Início',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2_rounded),
+            label: 'Estoque',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],

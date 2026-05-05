@@ -126,8 +126,8 @@ class _AttendantPersonalDataScreenState
                 label: 'IN\u00cdCIO',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.search),
-                label: 'BUSCAR',
+                icon: Icon(Icons.inventory_2_rounded),
+                label: 'ESTOQUE',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.chat_bubble),
@@ -335,7 +335,10 @@ class _AttendantPersonalDataScreenState
     }
 
     if (index == 1) {
-      Navigator.pushReplacementNamed(context, AppRoutes.attendantSearch);
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.attendantProductRegistration,
+      );
       return;
     }
 

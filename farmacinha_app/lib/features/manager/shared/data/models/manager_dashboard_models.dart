@@ -24,7 +24,7 @@ class ManagerProductSummary {
     int soldUnits = 0,
   }) {
     final rawPrice = map['price'];
-    final rawStock = map['stock'] ?? map['stock_quantity'];
+    final rawStock = map['stock_quantity'];
 
     return ManagerProductSummary(
       id: (map['id'] ?? '').toString(),

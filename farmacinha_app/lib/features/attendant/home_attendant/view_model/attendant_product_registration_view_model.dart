@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:farmacia_app/features/attendant/home_attendant/data/models/attendant_stock_product_model.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/data/repositories/attendant_products_repository.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/data/repositories/product_ai_repository.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view_model/attendant_profile_data_store.dart';
@@ -7,6 +8,8 @@ import 'package:farmacia_app/features/client/home_client/data/models/product_mod
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+enum AttendantStockControlMode { list, form }
 
 class AttendantProductRegistrationViewModel extends ChangeNotifier {
   AttendantProductRegistrationViewModel({
@@ -19,6 +22,8 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
         _profileStore = profileStore ?? AttendantProfileDataStore.instance,
         _imagePicker = imagePicker ?? ImagePicker() {
     dateController.text = _formatDate(_registrationDate);
+    searchController.addListener(_applyProductFilters);
+    refreshProducts();
   }
 
   final AttendantProductsRepository _repository;
@@ -31,6 +36,7 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
   final TextEditingController priceController = TextEditingController();
   final TextEditingController stockController = TextEditingController();
   final TextEditingController dateController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
 
   final List<String> categories = const [
     'Analgésicos',
@@ -50,8 +56,13 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
   DateTime _registrationDate = DateTime.now();
   bool _isControlled = false;
   bool _isSaving = false;
+  bool _isLoadingProducts = false;
   bool _isGeneratingDescription = false;
   bool _loadedProduct = false;
+  String? _productsErrorMessage;
+  AttendantStockControlMode _mode = AttendantStockControlMode.list;
+  List<AttendantStockProduct> _products = [];
+  List<AttendantStockProduct> _filteredProducts = [];
 
   String? get editingProductId => _editingProductId;
   String? get selectedCategory => _selectedCategory;
@@ -60,7 +71,11 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
   DateTime get registrationDate => _registrationDate;
   bool get isControlled => _isControlled;
   bool get isSaving => _isSaving;
+  bool get isLoadingProducts => _isLoadingProducts;
   bool get isGeneratingDescription => _isGeneratingDescription;
+  String? get productsErrorMessage => _productsErrorMessage;
+  AttendantStockControlMode get mode => _mode;
+  List<AttendantStockProduct> get products => _filteredProducts;
   AttendantProfileData get profile => _profileStore.data;
   bool get isEditing => _editingProductId != null && _editingProductId!.isNotEmpty;
 
@@ -75,6 +90,57 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     stockController.text = '0';
     _selectedCategory = _normalizeCategory(product.category);
     _existingImageUrl = product.imageUrl.isEmpty ? null : product.imageUrl;
+    _mode = AttendantStockControlMode.form;
+    notifyListeners();
+  }
+
+  Future<void> refreshProducts() async {
+    _isLoadingProducts = true;
+    _productsErrorMessage = null;
+    notifyListeners();
+
+    try {
+      _products = await _repository.fetchProducts();
+      _applyProductFilters(notify: false);
+    } on Object catch (error) {
+      _products = [];
+      _filteredProducts = [];
+      _productsErrorMessage = 'Não foi possível carregar o estoque: $error';
+    } finally {
+      _isLoadingProducts = false;
+      notifyListeners();
+    }
+  }
+
+  void startNewProduct() {
+    _clearForm();
+    _mode = AttendantStockControlMode.form;
+    notifyListeners();
+  }
+
+  void editProduct(AttendantStockProduct product) {
+    _editingProductId = product.id;
+    nameController.text = product.name;
+    descriptionController.text = product.description;
+    priceController.text = product.price.toStringAsFixed(2).replaceAll('.', ',');
+    stockController.text = product.stockQuantity.toString();
+    _selectedCategory = _normalizeCategory(product.category) ?? product.category;
+    if (!categories.contains(_selectedCategory)) {
+      _selectedCategory = null;
+    }
+    _existingImageUrl = product.imageUrl.isEmpty ? null : product.imageUrl;
+    _selectedImageBytes = null;
+    _imageExtension = null;
+    _registrationDate = product.registrationDate ?? DateTime.now();
+    dateController.text = _formatDate(_registrationDate);
+    _isControlled = product.isControlled;
+    _mode = AttendantStockControlMode.form;
+    notifyListeners();
+  }
+
+  void showProductList() {
+    _mode = AttendantStockControlMode.list;
+    _clearForm();
     notifyListeners();
   }
 
@@ -154,9 +220,14 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
         imageExtension: _imageExtension,
       );
 
+      final wasEditing = isEditing;
+      await refreshProducts();
+      _clearForm();
+      _mode = AttendantStockControlMode.list;
+
       return ProductSaveResult(
         success: true,
-        message: isEditing
+        message: wasEditing
             ? 'Produto atualizado com sucesso.'
             : 'Produto cadastrado com sucesso.',
       );
@@ -164,6 +235,38 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
       return ProductSaveResult(
         success: false,
         message: 'Não foi possível salvar o produto: $error',
+      );
+    } finally {
+      _isSaving = false;
+      notifyListeners();
+    }
+  }
+
+  Future<ProductSaveResult> deleteCurrentProduct() async {
+    final productId = _editingProductId;
+    if (productId == null || productId.isEmpty) {
+      return const ProductSaveResult(
+        success: false,
+        message: 'Selecione um produto para deletar.',
+      );
+    }
+
+    _isSaving = true;
+    notifyListeners();
+
+    try {
+      await _repository.deleteProduct(productId);
+      await refreshProducts();
+      _clearForm();
+      _mode = AttendantStockControlMode.list;
+      return const ProductSaveResult(
+        success: true,
+        message: 'Produto deletado com sucesso.',
+      );
+    } on Object catch (error) {
+      return ProductSaveResult(
+        success: false,
+        message: 'Não foi possível deletar o produto: $error',
       );
     } finally {
       _isSaving = false;
@@ -242,6 +345,36 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     return double.tryParse(normalized) ?? 0;
   }
 
+  void _applyProductFilters({bool notify = true}) {
+    final query = searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      _filteredProducts = List<AttendantStockProduct>.from(_products);
+    } else {
+      _filteredProducts = _products.where((product) {
+        return product.name.toLowerCase().contains(query) ||
+            product.category.toLowerCase().contains(query);
+      }).toList(growable: false);
+    }
+
+    if (notify) notifyListeners();
+  }
+
+  void _clearForm() {
+    _editingProductId = null;
+    _selectedCategory = null;
+    _existingImageUrl = null;
+    _imageExtension = null;
+    _selectedImageBytes = null;
+    _registrationDate = DateTime.now();
+    _isControlled = false;
+    _loadedProduct = false;
+    nameController.clear();
+    descriptionController.clear();
+    priceController.clear();
+    stockController.clear();
+    dateController.text = _formatDate(_registrationDate);
+  }
+
   Future<bool> _requestPermission(ImageSource source) async {
     if (source == ImageSource.camera) {
       final status = await Permission.camera.request();
@@ -271,6 +404,8 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    searchController.removeListener(_applyProductFilters);
+    searchController.dispose();
     nameController.dispose();
     descriptionController.dispose();
     priceController.dispose();
