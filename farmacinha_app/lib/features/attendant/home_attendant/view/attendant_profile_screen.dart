@@ -119,8 +119,8 @@ class _AttendantProfileScreenState extends State<AttendantProfileScreen> {
                         },
                       ),
                       _MenuRow(
-                        icon: Icons.add_business_rounded,
-                        label: 'Cadastro de Produtos',
+                        icon: Icons.inventory_2_rounded,
+                        label: 'Controle de Estoque',
                         onTap: () {
                           Navigator.pushNamed(
                             context,
@@ -213,7 +213,7 @@ class _AttendantProfileScreenState extends State<AttendantProfileScreen> {
               if (index == 1) {
                 Navigator.pushReplacementNamed(
                   context,
-                  AppRoutes.attendantSearch,
+                  AppRoutes.attendantProductRegistration,
                 );
                 return;
               }
@@ -234,8 +234,8 @@ class _AttendantProfileScreenState extends State<AttendantProfileScreen> {
                 label: 'INÍCIO',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.search),
-                label: 'BUSCAR',
+                icon: Icon(Icons.inventory_2_rounded),
+                label: 'ESTOQUE',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.chat_bubble),

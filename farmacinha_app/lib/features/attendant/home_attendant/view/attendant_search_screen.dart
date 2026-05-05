@@ -273,7 +273,10 @@ class _AttendantSearchScreenState extends State<AttendantSearchScreen> {
             icon: Icon(Icons.home_rounded),
             label: 'INÍCIO',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'BUSCAR'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2_rounded),
+            label: 'ESTOQUE',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.chat_bubble), label: 'CHAT'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'PERFIL'),
         ],

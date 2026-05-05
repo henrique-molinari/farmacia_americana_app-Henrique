@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:farmacia_app/core/utils/date_time_utils.dart';
+import 'package:farmacia_app/features/attendant/home_attendant/data/models/attendant_stock_product_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AttendantProductPayload {
@@ -30,22 +31,12 @@ class AttendantProductPayload {
       'description': description,
       'category': category,
       'price': price,
+      'stock_quantity': stockQuantity,
       'registration_date': localDateToUtcIso(registrationDate),
       'is_controlled': isControlled,
       'is_active': true,
       if (imageUrl != null) 'image_url': imageUrl,
       if (userId != null) 'registered_by': userId,
-    };
-  }
-
-  Map<String, dynamic> toSupabaseMapWithStockColumn(
-    String stockColumn, {
-    String? imageUrl,
-    String? userId,
-  }) {
-    return {
-      ...toSupabaseMap(imageUrl: imageUrl, userId: userId),
-      stockColumn: stockQuantity,
     };
   }
 }
@@ -61,6 +52,23 @@ class AttendantProductsRepository {
 
   SupabaseClient get _client => Supabase.instance.client;
 
+  Future<List<AttendantStockProduct>> fetchProducts() async {
+    final response = await _client
+        .from(_productsTable)
+        .select(
+          'id, name, description, category, price, stock_quantity, image_url, is_controlled, is_active, registration_date',
+        )
+        .order('name');
+
+    return response
+        .map<AttendantStockProduct>(
+          (product) => AttendantStockProduct.fromSupabaseMap(
+            product as Map<String, dynamic>,
+          ),
+        )
+        .toList(growable: false);
+  }
+
   Future<void> saveProduct({
     required AttendantProductPayload payload,
     Uint8List? imageBytes,
@@ -74,47 +82,17 @@ class AttendantProductsRepository {
             extension: imageExtension ?? 'jpg',
             productId: payload.id,
           );
-    await _saveProductWithCompatibleStockColumn(
-      payload: payload,
-      imageUrl: imageUrl,
-      userId: userId,
-    );
+    final data = payload.toSupabaseMap(imageUrl: imageUrl, userId: userId);
+
+    if (payload.id == null || payload.id!.isEmpty) {
+      await _client.from(_productsTable).insert(data);
+    } else {
+      await _client.from(_productsTable).update(data).eq('id', payload.id!);
+    }
   }
 
-  Future<void> _saveProductWithCompatibleStockColumn({
-    required AttendantProductPayload payload,
-    required String? imageUrl,
-    required String? userId,
-  }) async {
-    Object? lastError;
-    const stockColumns = ['stock', 'stock_quantity'];
-
-    for (final stockColumn in stockColumns) {
-      final data = payload.toSupabaseMapWithStockColumn(
-        stockColumn,
-        imageUrl: imageUrl,
-        userId: userId,
-      );
-
-      try {
-        if (payload.id == null || payload.id!.isEmpty) {
-          await _client.from(_productsTable).insert(data);
-        } else {
-          await _client.from(_productsTable).update(data).eq('id', payload.id!);
-        }
-        return;
-      } on PostgrestException catch (error) {
-        lastError = error;
-        if (_isMissingColumn(error, stockColumn)) {
-          continue;
-        }
-        rethrow;
-      }
-    }
-
-    if (lastError != null) {
-      throw lastError!;
-    }
+  Future<void> deleteProduct(String productId) async {
+    await _client.from(_productsTable).delete().eq('id', productId);
   }
 
   Future<String> _uploadProductImage({
@@ -153,12 +131,5 @@ class AttendantProductsRepository {
       default:
         return 'image/jpeg';
     }
-  }
-
-  bool _isMissingColumn(PostgrestException error, String columnName) {
-    final message = error.message.toLowerCase();
-    final normalizedColumn = columnName.toLowerCase();
-    return message.contains(normalizedColumn) &&
-        (message.contains('column') || message.contains('schema cache'));
   }
 }

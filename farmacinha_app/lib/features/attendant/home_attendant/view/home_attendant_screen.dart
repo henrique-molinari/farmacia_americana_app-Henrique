@@ -322,7 +322,10 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
         currentIndex: viewModel.currentTab,
         onTap: (index) {
           if (index == 1) {
-            Navigator.pushReplacementNamed(context, AppRoutes.attendantSearch);
+            Navigator.pushReplacementNamed(
+              context,
+              AppRoutes.attendantProductRegistration,
+            );
             return;
           }
 
@@ -343,7 +346,10 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
         unselectedItemColor: const Color(0xFF94A3B8),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'HOME'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'BUSCA'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2_rounded),
+            label: 'ESTOQUE',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
             label: 'CHAT',
