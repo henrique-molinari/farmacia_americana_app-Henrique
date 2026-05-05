@@ -19,13 +19,16 @@ class _AttendantChatScreenState extends State<AttendantChatScreen> {
   void initState() {
     super.initState();
     _viewModel = AttendantChatViewModel();
+    _viewModel.initialize();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    if (_didSyncRouteSelection) return;
+    if (_didSyncRouteSelection) {
+      return;
+    }
 
     final selectedClientId =
         ModalRoute.of(context)?.settings.arguments as String?;
@@ -56,7 +59,7 @@ class _AttendantChatScreenState extends State<AttendantChatScreen> {
         title: const Row(
           children: [
             Text(
-              'FARMÁCIA AMERICANA',
+              'FARMACIA AMERICANA',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
@@ -84,6 +87,24 @@ class _AttendantChatScreenState extends State<AttendantChatScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (_viewModel.errorMessage != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE7E7),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _viewModel.errorMessage!,
+                      style: const TextStyle(
+                        color: Pallete.primaryRed,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                ],
                 const Text(
                   'ATENDIMENTO AO CLIENTE',
                   style: TextStyle(
@@ -131,7 +152,12 @@ class _AttendantChatScreenState extends State<AttendantChatScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                if (_viewModel.clients.isEmpty)
+                if (_viewModel.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (_viewModel.clients.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Center(child: Text('Nenhuma conversa encontrada.')),
@@ -185,7 +211,7 @@ class _AttendantChatScreenState extends State<AttendantChatScreen> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_rounded),
-            label: 'Início',
+            label: 'Inicio',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.inventory_2_rounded),
@@ -212,8 +238,6 @@ class _ChatClientCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const previewText = 'Olá, preciso de ajuda com meu pedido...';
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -275,14 +299,16 @@ class _ChatClientCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      previewText,
+                      client.preview.isEmpty
+                          ? 'Cliente aguardando atendimento...'
+                          : client.preview,
                       style: TextStyle(
-                        color: isSelected
+                        color: isSelected || client.isUrgent
                             ? Pallete.primaryRed
                             : const Color(0xFF4F3131),
                         fontSize: 16,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
+                        fontWeight: isSelected || client.isUrgent
+                            ? FontWeight.w700
                             : FontWeight.w400,
                       ),
                       maxLines: 1,
@@ -296,12 +322,12 @@ class _ChatClientCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    _formatTimeLabel(client.timeLabel),
+                    client.timeLabel,
                     style: TextStyle(
-                      color: isSelected
+                      color: isSelected || client.isUrgent
                           ? Pallete.primaryRed
                           : const Color(0xFF6F5959),
-                      fontWeight: isSelected
+                      fontWeight: isSelected || client.isUrgent
                           ? FontWeight.w800
                           : FontWeight.w600,
                       fontSize: 14,
@@ -333,10 +359,5 @@ class _ChatClientCard extends StatelessWidget {
               : part[0].toUpperCase() + part.substring(1).toLowerCase(),
         )
         .join(' ');
-  }
-
-  String _formatTimeLabel(String label) {
-    if (label.toUpperCase() == 'HÁ 2 HORAS') return 'AGORA';
-    return label;
   }
 }

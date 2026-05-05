@@ -17,6 +17,12 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
   final HomeAttendantViewModel viewModel = HomeAttendantViewModel();
 
   @override
+  void initState() {
+    super.initState();
+    viewModel.initialize();
+  }
+
+  @override
   void dispose() {
     viewModel.dispose();
     super.dispose();
@@ -119,6 +125,25 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (viewModel.errorMessage != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFE7E7),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFFCACA)),
+                      ),
+                      child: Text(
+                        viewModel.errorMessage!,
+                        style: const TextStyle(
+                          color: Pallete.primaryRed,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
                   _sectionCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,7 +290,12 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
                   const SizedBox(height: 10),
                   const Divider(color: Color(0xFFD9E0EB)),
                   const SizedBox(height: 10),
-                  if (viewModel.chats.isEmpty)
+                  if (viewModel.isLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 28),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (viewModel.chats.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 28),
                       child: Center(

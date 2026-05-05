@@ -1,48 +1,210 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:farmacia_app/features/auth/view_models/auth_session_view_model.dart';
-import 'package:farmacia_app/features/client/chat/data/mocks/mock_client_chat_conversation.dart';
 import 'package:farmacia_app/features/client/chat/data/models/client_chat_attachment_model.dart';
 import 'package:farmacia_app/features/client/chat/data/models/client_chat_bot_step_model.dart';
 import 'package:farmacia_app/features/client/chat/data/models/client_chat_conversation_model.dart';
 import 'package:farmacia_app/features/client/chat/data/models/client_chat_message_model.dart';
 import 'package:farmacia_app/features/client/chat/data/models/client_chat_option_model.dart';
+import 'package:farmacia_app/features/support/data/repositories/support_chat_repository.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ClientChatViewModel extends ChangeNotifier {
+  ClientChatViewModel({
+    AuthSessionViewModel? authSession,
+    SupportChatRepository? repository,
+  }) : _authSession = authSession ?? AuthSessionViewModel.instance,
+       _repository = repository ?? SupportChatRepository.instance {
+    _steps.addAll(_buildSteps());
+  }
+
   final AuthSessionViewModel _authSession;
+  final SupportChatRepository _repository;
   final TextEditingController messageController = TextEditingController();
   final Map<String, ClientChatBotStep> _steps = {};
 
-  ClientChatConversation _conversation =
-      MockClientChatConversation.getConversation();
+  ClientChatConversation _conversation = const ClientChatConversation(
+    pharmacyName: 'Farmacia Americana',
+    statusLabel: 'ChatBot e equipe de atendimento',
+    messages: [],
+  );
+
+  RealtimeChannel? _channel;
   String? _activeOptionsMessageId;
   String? _manualInputContext;
+  String? _activeConversationId;
+  String? _hiddenConversationId;
   bool _isHumanAttendanceActive = false;
-
-  ClientChatViewModel({AuthSessionViewModel? authSession})
-    : _authSession = authSession ?? AuthSessionViewModel.instance {
-    _steps.addAll(_buildSteps());
-    _openBotStep('main_menu');
-  }
+  bool _isInitialized = false;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   ClientChatConversation get conversation => _conversation;
   String? get activeOptionsMessageId => _activeOptionsMessageId;
-  bool get canSendFreeText => _isHumanAttendanceActive || _manualInputContext != null;
-  bool get canAttachFiles => true;
+  bool get canSendFreeText =>
+      _isHumanAttendanceActive || _manualInputContext != null;
+  bool get canAttachFiles => !_conversation.isFinished;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
   String get clientName => _authSession.currentUser?.name ?? 'Cliente';
+
+  Future<void> initialize() async {
+    if (_isInitialized) {
+      return;
+    }
+
+    _isInitialized = true;
+    await refreshConversation();
+    _subscribeToRealtime();
+  }
+
+  Future<void> refreshConversation() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final supportConversation = await _repository
+          .fetchLatestClientConversation();
+
+      if (supportConversation == null) {
+        _activeConversationId = null;
+        _isHumanAttendanceActive = false;
+        _manualInputContext = null;
+        _activeOptionsMessageId = null;
+        _conversation = const ClientChatConversation(
+          pharmacyName: 'Farmacia Americana',
+          statusLabel: 'ChatBot e equipe de atendimento',
+          messages: [],
+        );
+        if (_conversation.messages.isEmpty) {
+          _openBotStep('main_menu');
+        }
+      } else if (supportConversation.status == 'finalizado') {
+        if (supportConversation.id != _hiddenConversationId) {
+          await _showClosedConversationAsNewStart(supportConversation);
+        }
+      } else {
+        final messages = await _repository.fetchMessages(
+          supportConversation.id,
+        );
+        _activeConversationId = supportConversation.id;
+        final isFinished = supportConversation.status == 'finalizado';
+        _isHumanAttendanceActive = !isFinished;
+        _manualInputContext = null;
+        _activeOptionsMessageId = null;
+        _conversation = ClientChatConversation(
+          conversationId: supportConversation.id,
+          pharmacyName: 'Farmacia Americana',
+          statusLabel: _statusLabelForConversation(supportConversation),
+          attendantName: supportConversation.attendantName,
+          isSupportTyping: false,
+          isFinished: isFinished,
+          messages: messages.map(_mapSupportMessage).toList(growable: false),
+        );
+      }
+    } catch (error) {
+      _errorMessage = error.toString().replaceFirst('Exception: ', '');
+      if (_conversation.messages.isEmpty) {
+        _conversation = const ClientChatConversation(
+          pharmacyName: 'Farmacia Americana',
+          statusLabel: 'ChatBot e equipe de atendimento',
+          messages: [],
+        );
+        _openBotStep('main_menu');
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _showClosedConversationAsNewStart(
+    SupportConversationRecord supportConversation,
+  ) async {
+    final messages = await _repository.fetchMessages(supportConversation.id);
+    final closingMessage = messages.reversed.firstWhere(
+      (message) =>
+          (message.senderType == SupportSenderType.system ||
+              message.senderType == SupportSenderType.bot) &&
+          (message.body ?? '').trim().isNotEmpty,
+      orElse: () => messages.isEmpty
+          ? SupportMessageRecord(
+              id: 'closed-${supportConversation.id}',
+              conversationId: supportConversation.id,
+              senderId: null,
+              senderName: 'Farmacia Americana',
+              senderType: SupportSenderType.system,
+              messageType: SupportMessageType.text,
+              body: supportConversation.lastMessagePreview,
+              attachmentName: null,
+              attachmentDetails: null,
+              createdAt: supportConversation.updatedAt,
+            )
+          : messages.last,
+    );
+
+    _hiddenConversationId = supportConversation.id;
+    _activeConversationId = null;
+    _isHumanAttendanceActive = false;
+    _manualInputContext = null;
+    _activeOptionsMessageId = null;
+    _conversation = const ClientChatConversation(
+      pharmacyName: 'Farmacia Americana',
+      statusLabel: 'ChatBot e equipe de atendimento',
+      messages: [],
+    );
+
+    _appendMessage(_mapSupportMessage(closingMessage));
+    _openBotStep('main_menu');
+  }
+
+  Future<void> resetChat() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _hiddenConversationId =
+          await _repository.resetCurrentClientConversation() ??
+          _activeConversationId;
+    } catch (error) {
+      _errorMessage = error.toString().replaceFirst('Exception: ', '');
+    } finally {
+      messageController.clear();
+      _activeConversationId = null;
+      _manualInputContext = null;
+      _activeOptionsMessageId = null;
+      _isHumanAttendanceActive = false;
+      _conversation = const ClientChatConversation(
+        pharmacyName: 'Farmacia Americana',
+        statusLabel: 'ChatBot e equipe de atendimento',
+        messages: [],
+      );
+      _openBotStep('main_menu');
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   bool isOptionsEnabledFor(String messageId) {
     return _activeOptionsMessageId == messageId;
   }
 
   void selectOption(ClientChatOption option) {
+    unawaited(_handleOptionSelection(option));
+  }
+
+  Future<void> _handleOptionSelection(ClientChatOption option) async {
     _appendMessage(
       ClientChatMessage(
         id: 'user-choice-${DateTime.now().microsecondsSinceEpoch}',
         sender: ClientChatSender.client,
+        senderName: clientName,
         time: _formatCurrentTime(),
         text: option.label,
         showReadReceipt: true,
@@ -58,36 +220,70 @@ class ClientChatViewModel extends ChangeNotifier {
       return;
     }
 
-    _openBotStep(nextStep);
-  }
-
-  void sendMessage() {
-    final draft = messageController.text.trim();
-
-    if (draft.isEmpty || !canSendFreeText) return;
-
-    _appendMessage(
-      ClientChatMessage(
-        id: 'user-message-${DateTime.now().microsecondsSinceEpoch}',
-        sender: ClientChatSender.client,
-        time: _formatCurrentTime(),
-        text: draft,
-        showReadReceipt: true,
-      ),
-    );
-
-    messageController.clear();
-
-    if (_manualInputContext == 'leave_message') {
-      _manualInputContext = null;
-      _openBotStep('leave_message_confirmation');
+    if (nextStep == 'human_now') {
+      _openBotStep(nextStep);
+      await _registerHumanRequest(
+        urgent: false,
+        clientMessage: option.label,
+        notice: _humanWaitingNotice,
+      );
       return;
     }
 
-    if (_manualInputContext == 'request_callback') {
-      _manualInputContext = null;
-      _openBotStep('request_callback_confirmation');
+    if (nextStep == 'urgent_human') {
+      _openBotStep(nextStep);
+      await _registerHumanRequest(
+        urgent: true,
+        clientMessage: option.label,
+        notice:
+            'Aguarde, em alguns minutinhos ja entraremos em contato. Sua conversa foi marcada como urgente.',
+      );
       return;
+    }
+
+    _openBotStep(nextStep);
+  }
+
+  Future<void> sendMessage() async {
+    final draft = messageController.text.trim();
+
+    if (draft.isEmpty || !canSendFreeText) {
+      return;
+    }
+
+    final optimisticMessage = ClientChatMessage(
+      id: 'user-message-${DateTime.now().microsecondsSinceEpoch}',
+      sender: ClientChatSender.client,
+      senderName: clientName,
+      time: _formatCurrentTime(),
+      text: draft,
+      showReadReceipt: true,
+    );
+
+    _appendMessage(optimisticMessage);
+    messageController.clear();
+
+    try {
+      final conversationId = await _ensureConversationForManualInteraction();
+      await _repository.sendClientText(
+        conversationId: conversationId,
+        text: draft,
+      );
+
+      if (_manualInputContext == 'leave_message') {
+        _manualInputContext = null;
+        _openBotStep('leave_message_confirmation');
+        return;
+      }
+
+      if (_manualInputContext == 'request_callback') {
+        _manualInputContext = null;
+        _openBotStep('request_callback_confirmation');
+        return;
+      }
+    } catch (error) {
+      _errorMessage = error.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
     }
   }
 
@@ -139,22 +335,34 @@ class ClientChatViewModel extends ChangeNotifier {
       ClientChatMessage(
         id: 'attachment-message-${DateTime.now().microsecondsSinceEpoch}',
         sender: ClientChatSender.client,
+        senderName: clientName,
         time: _formatCurrentTime(),
         attachment: attachment,
         showReadReceipt: true,
       ),
     );
 
-    if (!_isHumanAttendanceActive && _manualInputContext == null) {
-      _appendMessage(
-        ClientChatMessage(
-          id: 'bot-attachment-${DateTime.now().microsecondsSinceEpoch}',
-          sender: ClientChatSender.bot,
-          time: _formatCurrentTime(),
-          text:
-              'Recebi seu anexo. Se quiser continuar com o atendimento automatico, escolha uma das opcoes abaixo.',
-        ),
-      );
+    try {
+      if (_isHumanAttendanceActive || _manualInputContext != null) {
+        final conversationId = await _ensureConversationForManualInteraction();
+        await _repository.sendClientAttachmentSummary(
+          conversationId: conversationId,
+          fileName: file.name,
+          fileDetails: attachment.fileDetails,
+        );
+      } else {
+        _appendMessage(
+          ClientChatMessage(
+            id: 'bot-attachment-${DateTime.now().microsecondsSinceEpoch}',
+            sender: ClientChatSender.bot,
+            time: _formatCurrentTime(),
+            text:
+                'Recebi seu anexo. Se quiser que a equipe veja isso no painel do atendente, escolha atendimento humano.',
+          ),
+        );
+      }
+    } catch (error) {
+      _errorMessage = error.toString().replaceFirst('Exception: ', '');
     }
 
     notifyListeners();
@@ -244,7 +452,8 @@ class ClientChatViewModel extends ChangeNotifier {
       ),
       'orders_menu': _menuStep(
         id: 'orders_menu',
-        message: 'Pedidos & Entregas\n\nEscolha a opcao relacionada ao seu pedido.',
+        message:
+            'Pedidos & Entregas\n\nEscolha a opcao relacionada ao seu pedido.',
         options: const [
           ClientChatOption(
             id: 'track_order',
@@ -323,7 +532,7 @@ class ClientChatViewModel extends ChangeNotifier {
       'stock_check': _leafStep(
         id: 'stock_check',
         message:
-            'Posso te ajudar a confirmar disponibilidade em loja. Se quiser agilizar, anexe uma foto da embalagem ou da receita e depois selecione atendimento humano para a conferenca final.',
+            'Posso te ajudar a confirmar disponibilidade em loja. Se quiser agilizar, anexe uma foto da embalagem ou da receita e depois selecione atendimento humano para a conferencia final.',
         parentStepId: 'products_menu',
       ),
       'price_check': _leafStep(
@@ -365,7 +574,7 @@ class ClientChatViewModel extends ChangeNotifier {
       'track_order': _leafStep(
         id: 'track_order',
         message:
-            'Seu pedido #8829 esta em separacao final no momento. Se precisar de ajuda adicional com o rastreio, posso te encaminhar para uma pessoa do atendimento.',
+            'Se precisar de ajuda adicional com o rastreio, posso te encaminhar para uma pessoa do atendimento.',
         parentStepId: 'orders_menu',
       ),
       'delivery_problem': _leafStep(
@@ -418,35 +627,10 @@ class ClientChatViewModel extends ChangeNotifier {
       ),
       'human_now': ClientChatBotStep(
         id: 'human_now',
-        message: _isWithinServiceHours()
-            ? 'Tudo certo. Estou transferindo sua conversa para um atendente humano agora.'
-            : 'No momento estamos fora do horario de atendimento humano. Voce pode deixar um recado ou solicitar retorno.',
-        options: _isWithinServiceHours()
-            ? const []
-            : const [
-                ClientChatOption(
-                  id: 'leave_message_from_closed',
-                  label: 'Deixar recado',
-                  nextStepId: 'leave_message',
-                ),
-                ClientChatOption(
-                  id: 'callback_from_closed',
-                  label: 'Solicitar retorno',
-                  nextStepId: 'request_callback',
-                ),
-                ClientChatOption(
-                  id: 'back_to_human_menu',
-                  label: 'Voltar para falar com humano',
-                  nextStepId: 'human_menu',
-                ),
-                ClientChatOption(
-                  id: 'back_to_main_closed',
-                  label: 'Voltar ao menu principal',
-                  nextStepId: 'main_menu',
-                ),
-              ],
-        startsHumanAttendance: _isWithinServiceHours(),
-        enablesManualInput: _isWithinServiceHours(),
+        message: _humanWaitingNotice,
+        options: const [],
+        startsHumanAttendance: true,
+        enablesManualInput: true,
       ),
       'leave_message': const ClientChatBotStep(
         id: 'leave_message',
@@ -509,7 +693,7 @@ class ClientChatViewModel extends ChangeNotifier {
       'urgent_human': const ClientChatBotStep(
         id: 'urgent_human',
         message:
-            'Sinalizei sua conversa como urgente e vou priorizar o atendimento humano agora.',
+            'Aguarde, em alguns minutinhos ja entraremos em contato. Sua conversa foi marcada como urgente.',
         options: [],
         startsHumanAttendance: true,
         enablesManualInput: true,
@@ -574,9 +758,74 @@ class ClientChatViewModel extends ChangeNotifier {
     );
   }
 
+  Future<String> _ensureConversationForManualInteraction() async {
+    if (_activeConversationId != null) {
+      return _activeConversationId!;
+    }
+
+    final systemMessage = _manualInputContext == 'request_callback'
+        ? 'Cliente solicitou retorno da equipe.'
+        : 'Cliente deixou um recado para a equipe.';
+
+    final conversation = await _ensureHumanConversation(
+      urgent: false,
+      systemMessage: systemMessage,
+    );
+    return conversation.id;
+  }
+
+  Future<void> _registerHumanRequest({
+    required bool urgent,
+    required String clientMessage,
+    required String notice,
+  }) async {
+    try {
+      final conversation = await _ensureHumanConversation(
+        urgent: urgent,
+        systemMessage: urgent
+            ? 'Cliente solicitou atendimento humano com urgencia.'
+            : 'Cliente solicitou atendimento humano.',
+      );
+
+      await _repository.sendClientText(
+        conversationId: conversation.id,
+        text: clientMessage,
+      );
+      await _repository.sendClientNotice(
+        conversationId: conversation.id,
+        text: notice,
+        preserveLastPreview: clientMessage,
+      );
+    } catch (error) {
+      _errorMessage = error.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+    }
+  }
+
+  Future<SupportConversationRecord> _ensureHumanConversation({
+    required bool urgent,
+    required String systemMessage,
+  }) async {
+    final conversation = await _repository.requestHumanSupport(
+      urgent: urgent,
+      systemMessage: systemMessage,
+    );
+    _activeConversationId = conversation.id;
+    _isHumanAttendanceActive = true;
+    _conversation = _conversation.copyWith(
+      conversationId: conversation.id,
+      statusLabel: _statusLabelForConversation(conversation),
+      attendantName: conversation.attendantName,
+    );
+    notifyListeners();
+    return conversation;
+  }
+
   void _openBotStep(String stepId) {
     final step = _steps[stepId];
-    if (step == null) return;
+    if (step == null) {
+      return;
+    }
 
     if (!step.enablesManualInput) {
       _manualInputContext = null;
@@ -588,8 +837,11 @@ class ClientChatViewModel extends ChangeNotifier {
       ClientChatMessage(
         id: 'bot-step-$stepId-${DateTime.now().microsecondsSinceEpoch}',
         sender: ClientChatSender.bot,
+        senderName: 'Farmacia Americana',
         time: _formatCurrentTime(),
-        text: '${step.message}\n\nA qualquer momento, use as opcoes abaixo para voltar ao menu principal ou pedir atendimento humano urgente.',
+        text: step.options.isEmpty
+            ? step.message
+            : '${step.message}\n\nA qualquer momento, use as opcoes abaixo para voltar ao menu principal ou pedir atendimento humano urgente.',
         options: step.options,
       ),
     );
@@ -601,7 +853,6 @@ class ClientChatViewModel extends ChangeNotifier {
     if (step.startsHumanAttendance) {
       _isHumanAttendanceActive = true;
       _manualInputContext = null;
-      _appendHumanIntroduction(isUrgent: stepId == 'urgent_human');
       _activeOptionsMessageId = null;
     } else if (!step.enablesManualInput) {
       _isHumanAttendanceActive = false;
@@ -610,17 +861,68 @@ class ClientChatViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _appendHumanIntroduction({required bool isUrgent}) {
-    _appendMessage(
-      ClientChatMessage(
-        id: 'attendant-${DateTime.now().microsecondsSinceEpoch}',
-        sender: ClientChatSender.attendant,
-        time: _formatCurrentTime(),
-        text: isUrgent
-            ? 'Ola, aqui e a Juliana, do atendimento humano da Farmacia Americana. Recebi sua prioridade e vou seguir com voce por aqui agora.'
-            : 'Ola, aqui e a Juliana, do atendimento humano da Farmacia Americana. Acabei de assumir sua conversa e vou te ajudar a partir daqui.',
-      ),
+  ClientChatMessage _mapSupportMessage(SupportMessageRecord message) {
+    final sender = _mapSender(message.senderType);
+
+    ClientChatAttachment? attachment;
+    if (message.messageType == SupportMessageType.attachment &&
+        message.attachmentName != null &&
+        message.attachmentDetails != null) {
+      attachment = ClientChatAttachment(
+        id: 'support-${message.id}',
+        type: _inferAttachmentType(message.attachmentName!),
+        fileName: message.attachmentName!,
+        fileDetails: message.attachmentDetails!,
+      );
+    }
+
+    return ClientChatMessage(
+      id: message.id,
+      sender: sender,
+      senderName: message.senderName,
+      time: _formatTime(message.createdAt),
+      text: message.body,
+      attachment: attachment,
+      showReadReceipt: sender == ClientChatSender.client,
     );
+  }
+
+  ClientChatSender _mapSender(SupportSenderType senderType) {
+    switch (senderType) {
+      case SupportSenderType.client:
+        return ClientChatSender.client;
+      case SupportSenderType.attendant:
+        return ClientChatSender.attendant;
+      case SupportSenderType.bot:
+      case SupportSenderType.system:
+        return ClientChatSender.bot;
+    }
+  }
+
+  ClientAttachmentType _inferAttachmentType(String fileName) {
+    final extension = fileName.contains('.')
+        ? fileName.split('.').last.toLowerCase()
+        : '';
+    return _isImageExtension(extension)
+        ? ClientAttachmentType.photo
+        : ClientAttachmentType.document;
+  }
+
+  String _statusLabelForConversation(SupportConversationRecord conversation) {
+    if (conversation.status == 'finalizado') {
+      return 'Atendimento encerrado';
+    }
+
+    if (conversation.attendantName != null &&
+        conversation.attendantName!.trim().isNotEmpty) {
+      return 'Atendente: ${conversation.attendantName}';
+    }
+
+    if (conversation.status == 'novo') {
+      return 'Aguardando um atendente assumir';
+    }
+
+    return 'Equipe de atendimento online';
   }
 
   void _appendMessage(ClientChatMessage message) {
@@ -681,23 +983,49 @@ class ClientChatViewModel extends ChangeNotifier {
     return '${megabytes.toStringAsFixed(1)} MB';
   }
 
-  static bool _isWithinServiceHours() {
-    final now = DateTime.now();
-    const openingHour = 8;
-    final closingHour = now.weekday == DateTime.sunday ? 18 : 22;
-    return now.hour >= openingHour && now.hour < closingHour;
-  }
+  static const String _humanWaitingNotice =
+      'Aguarde, em alguns minutinhos ja entraremos em contato.';
 
   String _formatCurrentTime() {
-    final now = DateTime.now();
-    final hour = now.hour.toString().padLeft(2, '0');
-    final minute = now.minute.toString().padLeft(2, '0');
+    return _formatTime(DateTime.now());
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+
+  void _subscribeToRealtime() {
+    if (_channel != null) {
+      return;
+    }
+
+    final client = Supabase.instance.client;
+    _channel = client.channel('client-support-chat')
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'support_conversations',
+        callback: (_) => unawaited(refreshConversation()),
+      )
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'support_messages',
+        callback: (_) => unawaited(refreshConversation()),
+      )
+      ..subscribe();
   }
 
   @override
   void dispose() {
     messageController.dispose();
+    final channel = _channel;
+    _channel = null;
+    if (channel != null) {
+      unawaited(Supabase.instance.client.removeChannel(channel));
+    }
     super.dispose();
   }
 }

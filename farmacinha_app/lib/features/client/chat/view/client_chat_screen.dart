@@ -23,6 +23,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
   void initState() {
     super.initState();
     _viewModel = ClientChatViewModel();
+    _viewModel.initialize();
   }
 
   @override
@@ -94,6 +95,22 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
             );
           },
         ),
+        actions: [
+          ListenableBuilder(
+            listenable: _viewModel,
+            builder: (context, _) {
+              return IconButton(
+                onPressed: _viewModel.isLoading ? null : _confirmResetChat,
+                tooltip: 'Recomecar chat',
+                icon: const Icon(
+                  Icons.restart_alt_rounded,
+                  color: Pallete.primaryRed,
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 6),
+        ],
       ),
       body: ListenableBuilder(
         listenable: _viewModel,
@@ -102,6 +119,23 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
 
           return Column(
             children: [
+              if (_viewModel.errorMessage != null)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFE7E7),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    _viewModel.errorMessage!,
+                    style: const TextStyle(
+                      color: Pallete.primaryRed,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -145,7 +179,14 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     children: [
-                      const Center(child: _DayPill(label: 'Atendimento de hoje')),
+                      if (_viewModel.isLoading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      const Center(
+                        child: _DayPill(label: 'Atendimento de hoje'),
+                      ),
                       const SizedBox(height: 22),
                       ...conversation.messages.map(
                         (message) => _MessageBubble(
@@ -166,9 +207,12 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
               ),
               _ChatComposer(
                 controller: _viewModel.messageController,
-                isEnabled: _viewModel.canSendFreeText,
+                isEnabled: _viewModel.canSendFreeText && !_viewModel.isLoading,
+                canAttach: _viewModel.canAttachFiles && !_viewModel.isLoading,
                 onAttach: _showAttachmentOptions,
-                onSend: _viewModel.sendMessage,
+                onSend: () {
+                  _viewModel.sendMessage();
+                },
               ),
             ],
           );
@@ -182,6 +226,11 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
   }
 
   Future<void> _showAttachmentOptions() async {
+    if (!_viewModel.canAttachFiles) {
+      _showSnack('Recomece o chat para enviar novos anexos.');
+      return;
+    }
+
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.white,
@@ -253,6 +302,42 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
     );
   }
 
+  Future<void> _confirmResetChat() async {
+    final shouldReset = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Recomecar chat?'),
+          content: const Text(
+            'A conversa atual sera limpa desta tela e o menu inicial aparecera novamente.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Recomecar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldReset != true || !mounted) {
+      return;
+    }
+
+    await _viewModel.resetChat();
+
+    if (!mounted) {
+      return;
+    }
+
+    _showSnack('Chat reiniciado.');
+  }
+
   void _onBottomBarTap(int index) {
     if (index == 0) {
       Navigator.of(context).pushAndRemoveUntil(
@@ -272,9 +357,9 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
     }
 
     if (index == 3) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const AccountScreen()),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const AccountScreen()));
     }
   }
 
@@ -362,10 +447,12 @@ class _MessageBubble extends StatelessWidget {
             : CrossAxisAlignment.start,
         children: [
           if (isFromAttendant) ...[
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(left: 4, bottom: 6),
               child: Text(
-                'Atendimento humano',
+                message.senderName?.trim().isNotEmpty == true
+                    ? message.senderName!
+                    : 'Atendimento humano',
                 style: TextStyle(
                   color: Pallete.primaryRed,
                   fontSize: 12,
@@ -381,7 +468,10 @@ class _MessageBubble extends StatelessWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 310),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: bubbleColor,
                   borderRadius: BorderRadius.only(
@@ -530,7 +620,9 @@ class _AttachmentPreview extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              isPhoto ? Icons.photo_library_rounded : Icons.picture_as_pdf_rounded,
+              isPhoto
+                  ? Icons.photo_library_rounded
+                  : Icons.picture_as_pdf_rounded,
               color: message.isFromClient ? Colors.white : Pallete.primaryRed,
             ),
           ),
@@ -594,12 +686,14 @@ class _TypingIndicator extends StatelessWidget {
 class _ChatComposer extends StatelessWidget {
   final TextEditingController controller;
   final bool isEnabled;
+  final bool canAttach;
   final VoidCallback onAttach;
   final VoidCallback onSend;
 
   const _ChatComposer({
     required this.controller,
     required this.isEnabled,
+    required this.canAttach,
     required this.onAttach,
     required this.onSend,
   });
@@ -620,14 +714,16 @@ class _ChatComposer extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               child: InkWell(
-                onTap: onAttach,
+                onTap: canAttach ? onAttach : null,
                 borderRadius: BorderRadius.circular(16),
-                child: const SizedBox(
+                child: SizedBox(
                   width: 52,
                   height: 52,
                   child: Icon(
                     Icons.attach_file_rounded,
-                    color: Pallete.primaryRed,
+                    color: canAttach
+                        ? Pallete.primaryRed
+                        : const Color(0xFFD8D8D8),
                   ),
                 ),
               ),
@@ -755,10 +851,7 @@ class _AttachmentOptionTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: Pallete.textColor,
-            ),
+            const Icon(Icons.chevron_right_rounded, color: Pallete.textColor),
           ],
         ),
       ),

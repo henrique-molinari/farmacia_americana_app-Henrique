@@ -7,6 +7,7 @@ class ClientChatMessage {
   final String id;
   final ClientChatSender sender;
   final String time;
+  final String? senderName;
   final String? text;
   final ClientChatAttachment? attachment;
   final List<ClientChatOption> options;
@@ -16,6 +17,7 @@ class ClientChatMessage {
     required this.id,
     required this.sender,
     required this.time,
+    this.senderName,
     this.text,
     this.attachment,
     this.options = const [],

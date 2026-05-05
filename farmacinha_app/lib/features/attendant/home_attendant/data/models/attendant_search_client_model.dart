@@ -4,6 +4,8 @@ class AttendantSearchClient {
   final String name;
   final String cpf;
   final String timeLabel;
+  final String preview;
+  final bool isUrgent;
 
   const AttendantSearchClient({
     required this.id,
@@ -11,5 +13,7 @@ class AttendantSearchClient {
     required this.name,
     required this.cpf,
     required this.timeLabel,
+    this.preview = '',
+    this.isUrgent = false,
   });
 }

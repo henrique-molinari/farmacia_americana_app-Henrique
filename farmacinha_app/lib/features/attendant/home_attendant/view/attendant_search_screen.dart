@@ -20,6 +20,7 @@ class _AttendantSearchScreenState extends State<AttendantSearchScreen> {
   void initState() {
     super.initState();
     _viewModel = AttendantSearchViewModel();
+    _viewModel.initialize();
   }
 
   @override
@@ -79,6 +80,24 @@ class _AttendantSearchScreenState extends State<AttendantSearchScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (_viewModel.errorMessage != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE7E7),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _viewModel.errorMessage!,
+                      style: const TextStyle(
+                        color: Pallete.primaryRed,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                ],
                 const Text(
                   'Central de Atendimento',
                   style: TextStyle(
@@ -172,7 +191,12 @@ class _AttendantSearchScreenState extends State<AttendantSearchScreen> {
                   ],
                 ),
                 const SizedBox(height: 18),
-                if (clients.isEmpty)
+                if (_viewModel.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (clients.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Center(child: Text('Nenhum cliente encontrado.')),

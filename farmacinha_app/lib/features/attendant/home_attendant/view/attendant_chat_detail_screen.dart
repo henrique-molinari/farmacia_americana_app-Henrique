@@ -26,20 +26,13 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    if (_didSyncRouteSelection) return;
+    if (_didSyncRouteSelection) {
+      return;
+    }
 
     final selectedClientId =
         ModalRoute.of(context)?.settings.arguments as String?;
-
-    if (selectedClientId != null) {
-      _viewModel.selectClient(selectedClientId);
-    } else {
-      final defaultConversation = _viewModel.currentConversation;
-      if (defaultConversation != null) {
-        _viewModel.selectClient(defaultConversation.client.id);
-      }
-    }
-
+    _viewModel.initialize(selectedClientId);
     _didSyncRouteSelection = true;
   }
 
@@ -107,7 +100,7 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${conversation.statusLabel} • PEDIDO ${conversation.orderCode}',
+                        '${conversation.statusLabel} • ${conversation.orderCode}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -124,6 +117,33 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
             );
           },
         ),
+        actions: [
+          ListenableBuilder(
+            listenable: _viewModel,
+            builder: (context, _) {
+              final canClose =
+                  _viewModel.currentConversation != null &&
+                  !_viewModel.isLoading &&
+                  !_viewModel.isClosing;
+
+              return IconButton(
+                onPressed: canClose ? _confirmCloseAttendance : null,
+                tooltip: 'Encerrar atendimento',
+                icon: _viewModel.isClosing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(
+                        Icons.check_circle_outline_rounded,
+                        color: Pallete.primaryRed,
+                      ),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: ListenableBuilder(
         listenable: _viewModel,
@@ -131,13 +151,41 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
           final conversation = _viewModel.currentConversation;
 
           if (conversation == null) {
-            return const Center(
-              child: Text('Nenhuma conversa disponível no momento.'),
+            if (_viewModel.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  _viewModel.errorMessage ??
+                      'Nenhuma conversa disponivel no momento.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
             );
           }
 
           return Column(
             children: [
+              if (_viewModel.errorMessage != null)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFE7E7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _viewModel.errorMessage!,
+                    style: const TextStyle(
+                      color: Pallete.primaryRed,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               Expanded(
                 child: DecoratedBox(
                   decoration: const BoxDecoration(
@@ -169,7 +217,8 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
               ),
               _Composer(
                 controller: _viewModel.messageController,
-                onSend: _viewModel.sendMessage,
+                isEnabled: !_viewModel.isClosing,
+                onSend: () => _viewModel.sendMessage(),
               ),
             ],
           );
@@ -187,6 +236,59 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
               : part[0].toUpperCase() + part.substring(1).toLowerCase(),
         )
         .join(' ');
+  }
+
+  Future<void> _confirmCloseAttendance() async {
+    final shouldClose = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Encerrar atendimento?'),
+          content: const Text(
+            'A conversa sera finalizada, limpa da tela do atendente e o cliente recebera a mensagem de encerramento.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Encerrar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldClose != true || !mounted) {
+      return;
+    }
+
+    final closed = await _viewModel.closeConversation();
+
+    if (!mounted) {
+      return;
+    }
+
+    if (!closed) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              _viewModel.errorMessage ?? 'Nao foi possivel encerrar.',
+            ),
+          ),
+        );
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Atendimento encerrado.')));
+
+    Navigator.pushReplacementNamed(context, AppRoutes.attendantChat);
   }
 }
 
@@ -380,7 +482,7 @@ class _AttachmentContent extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
-                  Icons.picture_as_pdf_rounded,
+                  Icons.attach_file_rounded,
                   color: Pallete.primaryRed,
                 ),
               ),
@@ -441,7 +543,7 @@ class _TypingIndicator extends StatelessWidget {
       child: Row(
         children: [
           const Text(
-            '•••',
+            '...',
             style: TextStyle(
               fontSize: 16,
               letterSpacing: 2,
@@ -467,9 +569,14 @@ class _TypingIndicator extends StatelessWidget {
 
 class _Composer extends StatelessWidget {
   final TextEditingController controller;
+  final bool isEnabled;
   final VoidCallback onSend;
 
-  const _Composer({required this.controller, required this.onSend});
+  const _Composer({
+    required this.controller,
+    required this.isEnabled,
+    required this.onSend,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -503,6 +610,7 @@ class _Composer extends StatelessWidget {
                     Expanded(
                       child: TextField(
                         controller: controller,
+                        enabled: isEnabled,
                         decoration: const InputDecoration(
                           hintText: 'Digite sua mensagem...',
                           hintStyle: TextStyle(
@@ -511,7 +619,7 @@ class _Composer extends StatelessWidget {
                           ),
                           border: InputBorder.none,
                         ),
-                        onSubmitted: (_) => onSend(),
+                        onSubmitted: (_) => isEnabled ? onSend() : null,
                       ),
                     ),
                     const Icon(
@@ -524,10 +632,10 @@ class _Composer extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Material(
-              color: Pallete.primaryRed,
+              color: isEnabled ? Pallete.primaryRed : const Color(0xFFD8D8D8),
               borderRadius: BorderRadius.circular(16),
               child: InkWell(
-                onTap: onSend,
+                onTap: isEnabled ? onSend : null,
                 borderRadius: BorderRadius.circular(16),
                 child: const SizedBox(
                   width: 54,
