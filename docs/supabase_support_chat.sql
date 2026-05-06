@@ -54,6 +54,22 @@ create table if not exists public.support_messages (
 create index if not exists support_messages_conversation_created_at_idx
 on public.support_messages (conversation_id, created_at);
 
+do $$
+begin
+  alter publication supabase_realtime add table public.support_conversations;
+exception
+  when duplicate_object then null;
+end;
+$$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.support_messages;
+exception
+  when duplicate_object then null;
+end;
+$$;
+
 create or replace function public.touch_updated_at()
 returns trigger
 language plpgsql

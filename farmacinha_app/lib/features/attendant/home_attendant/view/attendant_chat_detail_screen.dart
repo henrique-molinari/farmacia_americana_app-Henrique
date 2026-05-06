@@ -14,12 +14,15 @@ class AttendantChatDetailScreen extends StatefulWidget {
 
 class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
   late final AttendantChatDetailViewModel _viewModel;
+  late final ScrollController _scrollController;
   bool _didSyncRouteSelection = false;
+  String _lastRenderedMessageId = '';
 
   @override
   void initState() {
     super.initState();
     _viewModel = AttendantChatDetailViewModel();
+    _scrollController = ScrollController();
   }
 
   @override
@@ -39,6 +42,7 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
   @override
   void dispose() {
     _viewModel.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -167,6 +171,8 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
             );
           }
 
+          _scrollToLatestMessage(conversation.messages);
+
           return Column(
             children: [
               if (_viewModel.errorMessage != null)
@@ -200,6 +206,7 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
                     ),
                   ),
                   child: ListView(
+                    controller: _scrollController,
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
                     children: [
                       const Center(child: _DayPill(label: 'HOJE')),
@@ -225,6 +232,26 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
         },
       ),
     );
+  }
+
+  void _scrollToLatestMessage(List<AttendantChatMessage> messages) {
+    final lastMessageId = messages.isEmpty ? 'empty' : messages.last.id;
+    if (lastMessageId == _lastRenderedMessageId) {
+      return;
+    }
+
+    _lastRenderedMessageId = lastMessageId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    });
   }
 
   String _formatName(String upperName) {

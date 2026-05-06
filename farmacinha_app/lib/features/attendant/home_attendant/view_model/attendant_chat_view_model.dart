@@ -17,8 +17,10 @@ class AttendantChatViewModel extends ChangeNotifier {
 
   List<AttendantSearchClient> _filteredClients = [];
   RealtimeChannel? _channel;
+  Timer? _refreshTimer;
   String? _selectedClientId;
   bool _isLoading = false;
+  bool _isRefreshing = false;
   String? _errorMessage;
 
   List<AttendantSearchClient> get clients => _filteredClients;
@@ -29,12 +31,20 @@ class AttendantChatViewModel extends ChangeNotifier {
   Future<void> initialize() async {
     await refresh();
     _subscribeToRealtime();
+    _startRefreshPolling();
   }
 
-  Future<void> refresh() async {
-    _isLoading = true;
+  Future<void> refresh({bool showLoading = true}) async {
+    if (_isRefreshing) {
+      return;
+    }
+
+    _isRefreshing = true;
     _errorMessage = null;
-    notifyListeners();
+    if (showLoading) {
+      _isLoading = true;
+      notifyListeners();
+    }
 
     try {
       final conversations = await _repository.fetchAttendantInbox();
@@ -63,7 +73,10 @@ class AttendantChatViewModel extends ChangeNotifier {
       _filteredClients = [];
       _errorMessage = error.toString().replaceFirst('Exception: ', '');
     } finally {
-      _isLoading = false;
+      _isRefreshing = false;
+      if (showLoading) {
+        _isLoading = false;
+      }
       notifyListeners();
     }
   }
@@ -119,6 +132,14 @@ class AttendantChatViewModel extends ChangeNotifier {
       ..subscribe();
   }
 
+  void _startRefreshPolling() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => unawaited(refresh(showLoading: false)),
+    );
+  }
+
   String _formatTimeLabel(DateTime moment) {
     final now = DateTime.now();
     final difference = now.difference(moment);
@@ -145,6 +166,8 @@ class AttendantChatViewModel extends ChangeNotifier {
   @override
   void dispose() {
     searchController.dispose();
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
     final channel = _channel;
     _channel = null;
     if (channel != null) {

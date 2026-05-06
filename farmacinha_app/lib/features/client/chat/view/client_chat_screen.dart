@@ -18,17 +18,21 @@ class ClientChatScreen extends StatefulWidget {
 
 class _ClientChatScreenState extends State<ClientChatScreen> {
   late final ClientChatViewModel _viewModel;
+  late final ScrollController _scrollController;
+  String _lastRenderedMessageId = '';
 
   @override
   void initState() {
     super.initState();
     _viewModel = ClientChatViewModel();
+    _scrollController = ScrollController();
     _viewModel.initialize();
   }
 
   @override
   void dispose() {
     _viewModel.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -116,6 +120,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
         listenable: _viewModel,
         builder: (context, _) {
           final conversation = _viewModel.conversation;
+          _scrollToLatestMessage(conversation.messages);
 
           return Column(
             children: [
@@ -177,6 +182,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
                     ),
                   ),
                   child: ListView(
+                    controller: _scrollController,
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     children: [
                       if (_viewModel.isLoading)
@@ -223,6 +229,26 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
         onTap: _onBottomBarTap,
       ),
     );
+  }
+
+  void _scrollToLatestMessage(List<ClientChatMessage> messages) {
+    final lastMessageId = messages.isEmpty ? 'empty' : messages.last.id;
+    if (lastMessageId == _lastRenderedMessageId) {
+      return;
+    }
+
+    _lastRenderedMessageId = lastMessageId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    });
   }
 
   Future<void> _showAttachmentOptions() async {

@@ -34,6 +34,7 @@ class ClientChatViewModel extends ChangeNotifier {
   );
 
   RealtimeChannel? _channel;
+  Timer? _refreshTimer;
   String? _activeOptionsMessageId;
   String? _manualInputContext;
   String? _activeConversationId;
@@ -41,6 +42,7 @@ class ClientChatViewModel extends ChangeNotifier {
   bool _isHumanAttendanceActive = false;
   bool _isInitialized = false;
   bool _isLoading = false;
+  bool _isRefreshing = false;
   String? _errorMessage;
 
   ClientChatConversation get conversation => _conversation;
@@ -60,18 +62,32 @@ class ClientChatViewModel extends ChangeNotifier {
     _isInitialized = true;
     await refreshConversation();
     _subscribeToRealtime();
+    _startRefreshPolling();
   }
 
-  Future<void> refreshConversation() async {
-    _isLoading = true;
+  Future<void> refreshConversation({bool showLoading = true}) async {
+    if (_isRefreshing) {
+      return;
+    }
+
+    _isRefreshing = true;
     _errorMessage = null;
-    notifyListeners();
+    if (showLoading) {
+      _isLoading = true;
+      notifyListeners();
+    }
 
     try {
       final supportConversation = await _repository
           .fetchLatestClientConversation();
 
       if (supportConversation == null) {
+        if (!showLoading &&
+            _activeConversationId == null &&
+            _conversation.messages.isNotEmpty) {
+          return;
+        }
+
         _activeConversationId = null;
         _isHumanAttendanceActive = false;
         _manualInputContext = null;
@@ -118,7 +134,10 @@ class ClientChatViewModel extends ChangeNotifier {
         _openBotStep('main_menu');
       }
     } finally {
-      _isLoading = false;
+      _isRefreshing = false;
+      if (showLoading) {
+        _isLoading = false;
+      }
       notifyListeners();
     }
   }
@@ -1018,9 +1037,19 @@ class ClientChatViewModel extends ChangeNotifier {
       ..subscribe();
   }
 
+  void _startRefreshPolling() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => unawaited(refreshConversation(showLoading: false)),
+    );
+  }
+
   @override
   void dispose() {
     messageController.dispose();
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
     final channel = _channel;
     _channel = null;
     if (channel != null) {

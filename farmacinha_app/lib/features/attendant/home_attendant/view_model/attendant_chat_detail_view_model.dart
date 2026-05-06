@@ -16,9 +16,11 @@ class AttendantChatDetailViewModel extends ChangeNotifier {
 
   AttendantConversation? _currentConversation;
   RealtimeChannel? _channel;
+  Timer? _refreshTimer;
   String? _selectedClientId;
   bool _isLoading = false;
   bool _isClosing = false;
+  bool _isRefreshing = false;
   String? _errorMessage;
 
   AttendantConversation? get currentConversation => _currentConversation;
@@ -30,12 +32,20 @@ class AttendantChatDetailViewModel extends ChangeNotifier {
     _selectedClientId = clientId;
     await refresh();
     _subscribeToRealtime();
+    _startRefreshPolling();
   }
 
-  Future<void> refresh() async {
-    _isLoading = true;
+  Future<void> refresh({bool showLoading = true}) async {
+    if (_isRefreshing) {
+      return;
+    }
+
+    _isRefreshing = true;
     _errorMessage = null;
-    notifyListeners();
+    if (showLoading) {
+      _isLoading = true;
+      notifyListeners();
+    }
 
     try {
       final clientId = await _resolveClientId();
@@ -79,7 +89,10 @@ class AttendantChatDetailViewModel extends ChangeNotifier {
       _currentConversation = null;
       _errorMessage = error.toString().replaceFirst('Exception: ', '');
     } finally {
-      _isLoading = false;
+      _isRefreshing = false;
+      if (showLoading) {
+        _isLoading = false;
+      }
       notifyListeners();
     }
   }
@@ -218,9 +231,19 @@ class AttendantChatDetailViewModel extends ChangeNotifier {
       ..subscribe();
   }
 
+  void _startRefreshPolling() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => unawaited(refresh(showLoading: false)),
+    );
+  }
+
   @override
   void dispose() {
     messageController.dispose();
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
     final channel = _channel;
     _channel = null;
     if (channel != null) {
