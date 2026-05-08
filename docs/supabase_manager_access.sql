@@ -13,6 +13,25 @@ as $$
   limit 1
 $$;
 
+do $$
+begin
+  alter publication supabase_realtime add table public.orders;
+exception
+  when duplicate_object then null;
+end;
+$$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.profiles;
+exception
+  when duplicate_object then null;
+end;
+$$;
+
+alter table public.orders replica identity full;
+alter table public.profiles replica identity full;
+
 drop policy if exists "Staff can read all profiles" on public.profiles;
 create policy "Staff can read all profiles"
 on public.profiles

@@ -87,6 +87,60 @@ class ManagerDashboardRepository {
         .toList(growable: false);
   }
 
+  Future<ManagerOrderSummary?> fetchOrderByRawId(Object? orderId) async {
+    if (orderId == null || orderId.toString().trim().isEmpty) {
+      return null;
+    }
+
+    final response = await _client
+        .from('orders')
+        .select(
+          'id, user_id, status, payment_method, total_amount, delivery_address, created_at',
+        )
+        .eq('id', orderId)
+        .maybeSingle();
+
+    if (response == null) {
+      return null;
+    }
+
+    final order = Map<String, dynamic>.from(response);
+    final profilesByUserId = await _fetchProfilesByUserId([order]);
+    final itemsByOrderId = await _fetchOrderItemsByOrderId([order]);
+    final userId = order['user_id']?.toString() ?? '';
+
+    return _orderSummaryFromMap(
+      order,
+      profile: profilesByUserId[userId],
+      items: itemsByOrderId[order['id']?.toString()] ?? const <OrderItem>[],
+    );
+  }
+
+  Future<List<ManagerClientSummary>> fetchRecentClients({int limit = 5}) async {
+    final response = await _client
+        .from('profiles')
+        .select('id, full_name, email, created_at')
+        .eq('role', UserRole.cliente.name)
+        .order('created_at', ascending: false)
+        .limit(limit);
+
+    return response
+        .whereType<Map<String, dynamic>>()
+        .map((profile) {
+          final createdAt =
+              tryParseUtcToLocal(profile['created_at']?.toString()) ??
+              DateTime.now();
+
+          return ManagerClientSummary(
+            id: (profile['id'] ?? '').toString(),
+            name: _resolveCustomerName(profile, profile['id']),
+            email: (profile['email'] ?? '').toString(),
+            createdAt: createdAt,
+          );
+        })
+        .toList(growable: false);
+  }
+
   Future<List<ManagerProductSummary>> _fetchProductsSafely({
     required Map<String, int> soldByProductId,
   }) async {

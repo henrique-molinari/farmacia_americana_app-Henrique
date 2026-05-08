@@ -96,6 +96,20 @@ class ManagerOrderSummary {
   int get itemCount => items.fold(0, (total, item) => total + item.quantity);
 }
 
+class ManagerClientSummary {
+  final String id;
+  final String name;
+  final String email;
+  final DateTime createdAt;
+
+  const ManagerClientSummary({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.createdAt,
+  });
+}
+
 class ManagerChartPoint {
   final String label;
   final double revenue;

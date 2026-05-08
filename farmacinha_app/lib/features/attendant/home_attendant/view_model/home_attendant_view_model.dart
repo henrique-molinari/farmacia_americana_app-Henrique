@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:farmacia_app/core/utils/date_time_utils.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/data/mocks/mock_attendant_status.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/data/models/attendant_chat_model.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/data/models/attendant_status_model.dart';
@@ -16,6 +17,7 @@ class HomeAttendantViewModel extends ChangeNotifier {
 
   final SupportChatRepository _repository;
   final TextEditingController searchController = TextEditingController();
+  ValueChanged<SupportHumanRequestNotification>? onHumanSupportRequest;
 
   List<AttendantChat> _allChats = [];
   List<AttendantChat> _filteredChats = [];
@@ -25,6 +27,7 @@ class HomeAttendantViewModel extends ChangeNotifier {
 
   String _selectedStatus = 'em_atendimento';
   int _currentTab = 0;
+  int _notificationsCount = 0;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -32,6 +35,7 @@ class HomeAttendantViewModel extends ChangeNotifier {
   List<AttendantStatus> get statusList => _statusList;
   String get selectedStatus => _selectedStatus;
   int get currentTab => _currentTab;
+  int get notificationsCount => _notificationsCount;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -47,6 +51,9 @@ class HomeAttendantViewModel extends ChangeNotifier {
 
     try {
       final conversations = await _repository.fetchAttendantInbox();
+      final notifications = await _repository
+          .fetchRecentHumanRequestNotifications(limit: 20);
+      _notificationsCount = notifications.length;
       _allChats = conversations
           .map(
             (conversation) => AttendantChat(
@@ -65,6 +72,7 @@ class HomeAttendantViewModel extends ChangeNotifier {
     } catch (error) {
       _allChats = [];
       _filteredChats = [];
+      _notificationsCount = 0;
       _updateStatusCounts();
       _errorMessage = error.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -135,9 +143,55 @@ class HomeAttendantViewModel extends ChangeNotifier {
         event: PostgresChangeEvent.all,
         schema: 'public',
         table: 'support_messages',
-        callback: (_) => unawaited(refresh()),
+        callback: (payload) {
+          unawaited(_handleSupportRequestMessage(payload));
+          unawaited(refresh());
+        },
       )
       ..subscribe();
+  }
+
+  Future<void> _handleSupportRequestMessage(
+    PostgresChangePayload payload,
+  ) async {
+    if (payload.eventType != PostgresChangeEvent.insert) {
+      return;
+    }
+
+    final message = payload.newRecord;
+    final body = (message['body'] ?? '').toString().trim();
+    if ((message['sender_type'] ?? '').toString() != 'system' ||
+        !body.contains('Aguarde, em alguns minutinhos')) {
+      return;
+    }
+
+    final conversationId = (message['conversation_id'] ?? '').toString();
+    final conversation = await _repository.fetchConversationById(
+      conversationId,
+    );
+    if (conversation == null) {
+      return;
+    }
+
+    final authUserId = Supabase.instance.client.auth.currentUser?.id;
+    if (conversation.attendantId != null &&
+        conversation.attendantId != authUserId) {
+      return;
+    }
+
+    onHumanSupportRequest?.call(
+      SupportHumanRequestNotification(
+        id: (message['id'] ?? '').toString(),
+        conversationId: conversationId,
+        clientId: conversation.clientId,
+        clientName: conversation.clientName,
+        preview: body.isEmpty ? 'Cliente solicitou atendimento humano.' : body,
+        isUrgent: conversation.isUrgent,
+        createdAt:
+            tryParseUtcToLocal(message['created_at']?.toString()) ??
+            DateTime.now(),
+      ),
+    );
   }
 
   String _formatInboxTimestamp(SupportConversationRecord conversation) {

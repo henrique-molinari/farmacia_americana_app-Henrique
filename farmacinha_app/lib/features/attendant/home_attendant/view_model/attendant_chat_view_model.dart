@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:farmacia_app/core/utils/date_time_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/data/models/attendant_search_client_model.dart';
 import 'package:farmacia_app/features/support/data/repositories/support_chat_repository.dart';
@@ -14,6 +15,7 @@ class AttendantChatViewModel extends ChangeNotifier {
   final SupportChatRepository _repository;
   final TextEditingController searchController = TextEditingController();
   final List<AttendantSearchClient> _allClients = [];
+  ValueChanged<SupportHumanRequestNotification>? onHumanSupportRequest;
 
   List<AttendantSearchClient> _filteredClients = [];
   RealtimeChannel? _channel;
@@ -127,9 +129,55 @@ class AttendantChatViewModel extends ChangeNotifier {
         event: PostgresChangeEvent.all,
         schema: 'public',
         table: 'support_messages',
-        callback: (_) => unawaited(refresh()),
+        callback: (payload) {
+          unawaited(_handleSupportRequestMessage(payload));
+          unawaited(refresh());
+        },
       )
       ..subscribe();
+  }
+
+  Future<void> _handleSupportRequestMessage(
+    PostgresChangePayload payload,
+  ) async {
+    if (payload.eventType != PostgresChangeEvent.insert) {
+      return;
+    }
+
+    final message = payload.newRecord;
+    final body = (message['body'] ?? '').toString().trim();
+    if ((message['sender_type'] ?? '').toString() != 'system' ||
+        !body.contains('Aguarde, em alguns minutinhos')) {
+      return;
+    }
+
+    final conversationId = (message['conversation_id'] ?? '').toString();
+    final conversation = await _repository.fetchConversationById(
+      conversationId,
+    );
+    if (conversation == null) {
+      return;
+    }
+
+    final authUserId = Supabase.instance.client.auth.currentUser?.id;
+    if (conversation.attendantId != null &&
+        conversation.attendantId != authUserId) {
+      return;
+    }
+
+    onHumanSupportRequest?.call(
+      SupportHumanRequestNotification(
+        id: (message['id'] ?? '').toString(),
+        conversationId: conversationId,
+        clientId: conversation.clientId,
+        clientName: conversation.clientName,
+        preview: body.isEmpty ? 'Cliente solicitou atendimento humano.' : body,
+        isUrgent: conversation.isUrgent,
+        createdAt:
+            tryParseUtcToLocal(message['created_at']?.toString()) ??
+            DateTime.now(),
+      ),
+    );
   }
 
   void _startRefreshPolling() {

@@ -23,6 +23,8 @@ class NotificationsBottomSheet extends StatelessWidget {
         return const Color(0xFFFAC000);
       case 'error':
         return Pallete.primaryRed;
+      case 'client':
+        return const Color(0xFF2563EB);
       default:
         return Pallete.textColor;
     }
@@ -36,27 +38,52 @@ class NotificationsBottomSheet extends StatelessWidget {
         return Icons.info_outline_rounded;
       case 'error':
         return Icons.warning_amber_rounded;
+      case 'client':
+        return Icons.person_add_alt_1_rounded;
       default:
         return Icons.notifications_outlined;
     }
   }
 
-  List<_ManagerNotification> _buildNotifications(ManagerDashboardData data) {
+  Future<_ManagerNotificationsData> _loadData() async {
+    final dashboard = await ManagerDashboardRepository.instance
+        .fetchDashboardData();
+    final clients = await ManagerDashboardRepository.instance
+        .fetchRecentClients(limit: 5);
+
+    return _ManagerNotificationsData(dashboard: dashboard, clients: clients);
+  }
+
+  List<_ManagerNotification> _buildNotifications(
+    _ManagerNotificationsData data,
+  ) {
     final notifications = <_ManagerNotification>[];
 
-    for (final order in data.recentOrders.take(4)) {
+    for (final order in data.dashboard.recentOrders.take(6)) {
+      final isFinishedSale = order.statusLabel == 'ENTREGUE';
       notifications.add(
         _ManagerNotification(
-          title: 'Pedido ${order.id.replaceFirst('PED-', '#')}',
+          title: isFinishedSale ? 'Venda finalizada' : 'Novo pedido realizado',
           description:
-              '${order.customerName} - R\$ ${order.totalAmount.toStringAsFixed(2).replaceAll('.', ',')}',
+              '${order.id.replaceFirst('PED-', '#')} - ${order.customerName} - R\$ ${order.totalAmount.toStringAsFixed(2).replaceAll('.', ',')}',
           time: _relativeTime(order.createdAt),
-          type: order.statusLabel == 'PENDENTE' ? 'warning' : 'success',
+          type: isFinishedSale ? 'success' : 'warning',
         ),
       );
     }
 
-    final lowStockProducts = data.products
+    for (final client in data.clients) {
+      notifications.add(
+        _ManagerNotification(
+          title: 'Novo cliente cadastrado',
+          description: client.name,
+          time: _relativeTime(client.createdAt),
+          type: 'client',
+        ),
+      );
+    }
+
+    final lowStockProducts = data.dashboard.products
         .where((product) => product.stock <= 10)
         .take(3)
         .toList(growable: false);
@@ -97,8 +124,8 @@ class NotificationsBottomSheet extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.only(top: 12),
-      child: FutureBuilder<ManagerDashboardData>(
-        future: ManagerDashboardRepository.instance.fetchDashboardData(),
+      child: FutureBuilder<_ManagerNotificationsData>(
+        future: _loadData(),
         builder: (context, snapshot) {
           final notifications = snapshot.hasData
               ? _buildNotifications(snapshot.data!)
@@ -274,5 +301,15 @@ class _ManagerNotification {
     required this.description,
     required this.time,
     required this.type,
+  });
+}
+
+class _ManagerNotificationsData {
+  final ManagerDashboardData dashboard;
+  final List<ManagerClientSummary> clients;
+
+  const _ManagerNotificationsData({
+    required this.dashboard,
+    required this.clients,
   });
 }

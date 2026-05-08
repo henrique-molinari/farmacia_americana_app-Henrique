@@ -87,6 +87,26 @@ class SupportMessageRecord {
   });
 }
 
+class SupportHumanRequestNotification {
+  final String id;
+  final String conversationId;
+  final String clientId;
+  final String clientName;
+  final String preview;
+  final bool isUrgent;
+  final DateTime createdAt;
+
+  const SupportHumanRequestNotification({
+    required this.id,
+    required this.conversationId,
+    required this.clientId,
+    required this.clientName,
+    required this.preview,
+    required this.isUrgent,
+    required this.createdAt,
+  });
+}
+
 class SupportChatRepository {
   SupportChatRepository._();
 
@@ -181,8 +201,15 @@ class SupportChatRepository {
       );
       final profiles = await _fetchProfilesForConversations(conversations);
 
+      final authUserId = _client.auth.currentUser?.id;
+
       return conversations
           .map((conversation) => _mapConversation(conversation, profiles))
+          .where(
+            (conversation) =>
+                conversation.attendantId == null ||
+                conversation.attendantId == authUserId,
+          )
           .toList(growable: false);
     } on PostgrestException catch (error) {
       throw Exception(_formatSchemaError(error));
@@ -214,6 +241,32 @@ class SupportChatRepository {
     }
   }
 
+  Future<SupportConversationRecord?> fetchConversationById(
+    String conversationId,
+  ) async {
+    if (conversationId.trim().isEmpty) {
+      return null;
+    }
+
+    try {
+      final response = await _client
+          .from(_conversationTable)
+          .select()
+          .eq('id', conversationId)
+          .maybeSingle();
+
+      if (response == null) {
+        return null;
+      }
+
+      final conversation = Map<String, dynamic>.from(response);
+      final profiles = await _fetchProfilesForConversations([conversation]);
+      return _mapConversation(conversation, profiles);
+    } on PostgrestException catch (error) {
+      throw Exception(_formatSchemaError(error));
+    }
+  }
+
   Future<List<SupportMessageRecord>> fetchMessages(
     String conversationId,
   ) async {
@@ -231,6 +284,79 @@ class SupportChatRepository {
       messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
       return messages;
+    } on PostgrestException catch (error) {
+      throw Exception(_formatSchemaError(error));
+    }
+  }
+
+  Future<List<SupportHumanRequestNotification>>
+  fetchRecentHumanRequestNotifications({int limit = 20}) async {
+    try {
+      final response = await _client
+          .from(_messageTable)
+          .select('id, conversation_id, body, created_at')
+          .eq('sender_type', 'system')
+          .ilike('body', '%Aguarde, em alguns minutinhos%')
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      final messages = response.whereType<Map<String, dynamic>>().toList(
+        growable: false,
+      );
+      final conversationIds = messages
+          .map((message) => (message['conversation_id'] ?? '').toString())
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList(growable: false);
+
+      if (conversationIds.isEmpty) {
+        return const <SupportHumanRequestNotification>[];
+      }
+
+      final conversationsResponse = await _client
+          .from(_conversationTable)
+          .select()
+          .inFilter('id', conversationIds);
+      final conversations = conversationsResponse
+          .whereType<Map<String, dynamic>>()
+          .toList(growable: false);
+      final profiles = await _fetchProfilesForConversations(conversations);
+      final conversationsById = {
+        for (final conversation in conversations)
+          (conversation['id'] ?? '').toString(): _mapConversation(
+            conversation,
+            profiles,
+          ),
+      };
+
+      return messages
+          .map((message) {
+            final conversationId = (message['conversation_id'] ?? '')
+                .toString();
+            final conversation = conversationsById[conversationId];
+            final body = (message['body'] ?? '').toString().trim();
+
+            return SupportHumanRequestNotification(
+              id: (message['id'] ?? '').toString(),
+              conversationId: conversationId,
+              clientId: conversation?.clientId ?? '',
+              clientName: conversation?.clientName ?? 'Cliente',
+              preview: body.isEmpty
+                  ? 'Cliente solicitou atendimento humano.'
+                  : body,
+              isUrgent: conversation?.isUrgent ?? false,
+              createdAt:
+                  tryParseUtcToLocal(message['created_at']?.toString()) ??
+                  DateTime.now(),
+            );
+          })
+          .where(
+            (notification) =>
+                notification.clientId.isNotEmpty &&
+                conversationsById[notification.conversationId]?.attendantId ==
+                    null,
+          )
+          .toList(growable: false);
     } on PostgrestException catch (error) {
       throw Exception(_formatSchemaError(error));
     }
@@ -368,15 +494,35 @@ class SupportChatRepository {
       return null;
     }
 
-    if (conversation.attendantId == null ||
-        conversation.attendantId == authUser.id) {
+    if (conversation.attendantId != null &&
+        conversation.attendantId != authUser.id) {
+      throw Exception(
+        'Essa conversa ja foi assumida por ${conversation.attendantName ?? 'outro atendente'}.',
+      );
+    }
+
+    if (conversation.attendantId == null) {
       await _client
           .from(_conversationTable)
           .update({'attendant_id': authUser.id, 'status': 'em_atendimento'})
-          .eq('id', conversation.id);
+          .eq('id', conversation.id)
+          .isFilter('attendant_id', null);
+    } else if (conversation.attendantId == authUser.id) {
+      await _client
+          .from(_conversationTable)
+          .update({'status': 'em_atendimento'})
+          .eq('id', conversation.id)
+          .eq('attendant_id', authUser.id);
     }
 
-    return fetchConversationForClient(clientId);
+    final claimedConversation = await fetchConversationForClient(clientId);
+    if (claimedConversation?.attendantId != authUser.id) {
+      throw Exception(
+        'Essa conversa ja foi assumida por ${claimedConversation?.attendantName ?? 'outro atendente'}.',
+      );
+    }
+
+    return claimedConversation;
   }
 
   Future<void> sendAttendantText({

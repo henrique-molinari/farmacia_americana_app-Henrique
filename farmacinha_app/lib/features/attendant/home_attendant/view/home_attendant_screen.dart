@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
 import 'package:farmacia_app/app/app_routes.dart';
-import 'package:farmacia_app/features/attendant/home_attendant/data/mocks/mock_attendant_notifications.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view/widgets/attendant_chat_item.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view/widgets/attendant_status_tile.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view_model/home_attendant_view_model.dart';
+import 'package:farmacia_app/features/support/data/repositories/support_chat_repository.dart';
 
 class HomeAttendantScreen extends StatefulWidget {
   const HomeAttendantScreen({super.key});
@@ -19,19 +19,28 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
   @override
   void initState() {
     super.initState();
+    viewModel.onHumanSupportRequest = _showHumanSupportRequestNotification;
+    viewModel.addListener(_onViewModelChanged);
     viewModel.initialize();
+  }
+
+  void _onViewModelChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
+    viewModel.removeListener(_onViewModelChanged);
+    viewModel.onHumanSupportRequest = null;
     viewModel.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final notificationsCount =
-        MockAttendantNotifications.getNotifications().length;
+    final notificationsCount = viewModel.notificationsCount;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FB),
@@ -75,11 +84,15 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
           Stack(
             children: [
               IconButton(
-                onPressed: () {
-                  Navigator.pushNamed(
+                onPressed: () async {
+                  await Navigator.pushNamed(
                     context,
                     AppRoutes.attendantNotifications,
                   );
+                  if (!mounted) {
+                    return;
+                  }
+                  await viewModel.refresh();
                 },
                 icon: const Icon(Icons.notifications, color: Color(0xFF111827)),
               ),
@@ -197,7 +210,7 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Mensagens Urgentes ($notificationsCount)',
+                                'Pedidos de Atendimento ($notificationsCount)',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   color: Pallete.primaryRed,
@@ -206,7 +219,7 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
                               ),
                               const SizedBox(height: 2),
                               const Text(
-                                'Resposta imediata necessária (>5 min).',
+                                'Clientes aguardando um atendente.',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Color(0xFFEA5A63),
@@ -310,12 +323,16 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
                         padding: const EdgeInsets.only(bottom: 12),
                         child: AttendantChatItem(
                           chat: chat,
-                          onTap: () {
-                            Navigator.pushNamed(
+                          onTap: () async {
+                            await Navigator.pushNamed(
                               context,
                               AppRoutes.attendantChatDetail,
                               arguments: chat.id,
                             );
+                            if (!mounted) {
+                              return;
+                            }
+                            await viewModel.refresh();
                           },
                         ),
                       ),
@@ -401,6 +418,43 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
       ),
       child: child,
     );
+  }
+
+  void _showHumanSupportRequestNotification(
+    SupportHumanRequestNotification notification,
+  ) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            'Cliente ${notification.clientName} quer falar com atendente agora!',
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          backgroundColor: Pallete.primaryRed,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: 'Abrir chat',
+            textColor: Colors.white,
+            onPressed: () async {
+              await Navigator.pushNamed(
+                context,
+                AppRoutes.attendantChatDetail,
+                arguments: notification.clientId,
+              );
+              if (!mounted) {
+                return;
+              }
+              await viewModel.refresh();
+            },
+          ),
+        ),
+      );
   }
 }
 

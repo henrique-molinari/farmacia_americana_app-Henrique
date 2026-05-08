@@ -3,6 +3,7 @@ import 'package:farmacia_app/app/app_routes.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/data/models/attendant_search_client_model.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view_model/attendant_chat_view_model.dart';
+import 'package:farmacia_app/features/support/data/repositories/support_chat_repository.dart';
 
 class AttendantChatScreen extends StatefulWidget {
   const AttendantChatScreen({super.key});
@@ -19,6 +20,7 @@ class _AttendantChatScreenState extends State<AttendantChatScreen> {
   void initState() {
     super.initState();
     _viewModel = AttendantChatViewModel();
+    _viewModel.onHumanSupportRequest = _showHumanSupportRequestNotification;
     _viewModel.initialize();
   }
 
@@ -42,6 +44,7 @@ class _AttendantChatScreenState extends State<AttendantChatScreen> {
 
   @override
   void dispose() {
+    _viewModel.onHumanSupportRequest = null;
     _viewModel.dispose();
     super.dispose();
   }
@@ -68,13 +71,18 @@ class _AttendantChatScreenState extends State<AttendantChatScreen> {
             ),
           ],
         ),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(
-              Icons.notifications,
-              color: Color(0xFF101828),
-              size: 28,
+            padding: const EdgeInsets.only(right: 16),
+            child: IconButton(
+              icon: const Icon(
+                Icons.notifications,
+                color: Color(0xFF101828),
+                size: 28,
+              ),
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.attendantNotifications);
+              },
             ),
           ),
         ],
@@ -222,6 +230,39 @@ class _AttendantChatScreenState extends State<AttendantChatScreen> {
         ],
       ),
     );
+  }
+
+  void _showHumanSupportRequestNotification(
+    SupportHumanRequestNotification notification,
+  ) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            'Cliente ${notification.clientName} quer falar com atendente agora!',
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          backgroundColor: Pallete.primaryRed,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: 'Abrir chat',
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.attendantChatDetail,
+                arguments: notification.clientId,
+              );
+            },
+          ),
+        ),
+      );
   }
 }
 
