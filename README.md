@@ -1,20 +1,47 @@
-# 💊 Farmácia Americana Digital
+# 💊 Farmácia Americana App
 
-> Plataforma móvel de atendimento de elite para a Farmácia Americana de Jacutinga — desenvolvida em Flutter.
+Aplicação mobile desenvolvida em **Flutter e Dart** para apoiar o atendimento digital, a consulta de produtos, a realização de pedidos e a gestão operacional da **Farmácia Americana**.
 
 ---
 
-## ⚠️ O Problema
+## 📘 Sobre o Projeto
 
-O atendimento via WhatsApp da farmácia sofre com baixa escalabilidade. A dependência de intervenção humana para tarefas repetitivas — consultar estoque, ler receitas, processar pagamentos — gera um efeito cascata: sobrecarga do atendente principal, desvio de função de outros colaboradores e queda na qualidade do atendimento.
+O **Farmácia Americana App** foi concebido para centralizar, em uma única plataforma, etapas importantes da jornada do cliente e da operação da farmácia.
 
-O resultado é um ciclo de ineficiência onde o estoque nem sempre é atualizado em tempo real e as dúvidas recorrentes dos clientes acumulam fila, consumindo o tempo que deveria ser dedicado a atendimentos que realmente exigem um farmacêutico.
+O sistema busca oferecer uma experiência mais organizada, prática e moderna, reunindo em um só ambiente:
+
+- 💬 atendimento digital por chat com fluxo automatizado por opções;
+- 🛍️ catálogo de produtos com busca e navegação por categorias;
+- 🛒 carrinho e checkout com diferentes formas de recebimento e pagamento;
+- 📦 acompanhamento de pedidos;
+- 🧑‍⚕️ painel interno de apoio ao atendimento;
+- 📊 gestão de produtos, estoque e indicadores básicos.
+
+---
+
+## ⚠️ Problema
+
+Parte do atendimento tradicional da farmácia depende de canais pouco estruturados, o que pode gerar:
+
+- ⏳ demora em respostas para dúvidas simples;
+- 🧩 dificuldade para organizar conversas e pedidos;
+- 🔄 experiência de compra fragmentada;
+- 📉 baixa rastreabilidade operacional;
+- 💸 perda de oportunidades de venda por atrito no processo.
+
+Esses fatores dificultam a escalabilidade do atendimento e aumentam a dependência de intervenção manual em tarefas repetitivas.
 
 ---
 
 ## 🎯 Objetivo
 
-Desenvolver um ecossistema digital em **Flutter** que atue como um braço inteligente da farmácia, fundindo a conveniência de um e-commerce (estilo iFood/Amazon) com o poder da **IA Generativa** para automatizar dúvidas recorrentes, processar receitas via OCR e prever a demanda de medicamentos de uso contínuo.
+O objetivo do projeto é construir um canal digital próprio para a farmácia, capaz de:
+
+- melhorar a experiência do cliente;
+- organizar o fluxo de atendimento;
+- facilitar a jornada de compra;
+- apoiar a operação interna;
+- criar base para evolução futura do produto.
 
 ---
 
@@ -22,129 +49,160 @@ Desenvolver um ecossistema digital em **Flutter** que atue como um braço inteli
 
 | Perfil | Necessidade |
 |---|---|
-| **Pacientes Crônicos** | Previsibilidade na recompra de medicamentos de uso contínuo |
-| **Consumidores Digitais** | Imediatismo, precisão e autonomia na compra |
-| **Clientes Fidelizados** | Modernidade mantendo a confiança já estabelecida com a marca |
+| **Clientes da farmácia** | Consultar produtos, pedir atendimento, comprar e acompanhar pedidos |
+| **Atendentes e farmacêuticos** | Organizar conversas e dar continuidade ao atendimento humano |
+| **Gestores** | Acompanhar produtos, estoque, pedidos e indicadores operacionais |
 
 ---
 
-## 📱 Funcionalidades Principais
+## ✨ Funcionalidades Principais
 
-### 🏠 Home — Vitrine Inteligente
-Tela inicial com algoritmo de recomendações sazonais (ex: antialérgicos no inverno de Jacutinga), ofertas em destaque e barra de busca com autocompletar e tolerância a erros ortográficos.
+### 🔐 Acesso e Conta
+- Cadastro de usuários
+- Login e logout
+- Direcionamento por perfil
+- Edição de dados pessoais
+- Alteração de senha
 
-### 🤖 Atendimento — Chatbot Lumi (IA Generativa)
-Central de atendimento automatizado com linguagem natural. O Lumi reconhece as **dúvidas frequentes dos clientes** e responde automaticamente com **orientações básicas** sobre posologia, modo de uso e armazenamento de medicamentos — sem realizar indicações ou diagnósticos. Casos que exigem julgamento clínico ou comercial (como pedidos de indicação de remédio) são **encaminhados automaticamente para um atendente humano**, com o histórico completo da conversa preservado via protocolo rastreável.
+### 🛍️ Catálogo e Busca
+- Listagem de produtos ativos
+- Navegação por categorias
+- Busca textual
+- Visualização de detalhes do produto
 
-### 📷 Receitas — OCR com IA (Visão Computacional)
-O cliente fotografa a receita médica. A IA extrai os medicamentos, valida a data de emissão e o CRM do prescritor, verifica o estoque e adiciona os itens ao carrinho automaticamente. Medicamentos controlados possuem trava de segurança obrigatória.
+### 💬 Atendimento pelo Chat
+- Fluxo automatizado por opções
+- Encaminhamento para atendimento humano
+- Registro de recados e solicitação de retorno
+- Envio de imagens e documentos no chat
 
 ### 🛒 Carrinho e Checkout
-Fluxo de compra sem fricção com pagamento via **PIX** e **Cartão de Crédito** (integração com API de terceiros), em conformidade com a LGPD.
+- Adição e remoção de produtos
+- Alteração de quantidades
+- Escolha entre entrega e retirada
+- Pagamento por Pix, dinheiro ou cartão na entrega
+- Confirmação do pedido
 
-### 🗂️ Categorias
-Navegação segmentada por: MIPs, Suplementos, Higiene, Medicamentos Controlados e Cuidados Infantis.
+### 📦 Pedidos
+- Consulta de pedidos realizados
+- Visualização de detalhes
+- Histórico de compras
+- Acompanhamento do andamento do pedido
 
-### 👤 Conta — Dashboard do Paciente
-Histórico de pedidos, gerenciamento de dados cadastrais e o **Ciclo de Saúde**: a IA aprende o padrão de recompra de medicamentos de uso contínuo e envia uma notificação push antes do estoque pessoal acabar.
+### 🧑‍💼 Operação Interna
+- Painel de conversas
+- Busca de clientes por nome ou CPF
+- Cadastro e edição de produtos
+- Atualização de estoque
+- Indicadores gerenciais básicos
 
 ---
 
 ## 🗂️ Estrutura da Documentação
 
-```
+```text
 docs/
-├── rn.md              # 19 Requisitos Funcionais (3 MVPs)
-├── rnf.md             # 15 Requisitos Não Funcionais
-├── rn.md              # 13 Regras de Negócio
-├── backlog.md         # 6 Épicos · 34 User Stories
-├── UC_FarmaciaAmericanaApp.md              # 13 Casos de Uso detalhados
+├── RF.md                         # Requisitos Funcionais
+├── RNF.md                        # Requisitos Não Funcionais
+├── RN.md                         # Regras de Negócio
+├── Backlog.md                    # Épicos e User Stories
+├── CasosDeUso.md                 # Casos de Uso
+├── VisãoDoProduto.md             # Visão do Produto
+├── MVP.md                        # Escopo do MVP
+├── DiagramasDeSequencia.md       # Diagramas de Sequência
+├── DiagramasDeClasse.md   	      # Diagrama de Classes
+
 ```
 
 ---
 
-## 🏗️ Épicos do Backlog
+## 🏗️ Épicos do Produto
 
-| Épico | Escopo | User Stories |
-|---|---|---|
-| **01** · Identidade e Segurança | Auth, LGPD, perfil do paciente | 6 |
-| **02** · Catálogo e E-commerce | Vitrine, busca, carrinho | 6 |
-| **03** · Inteligência de Atendimento | Chatbot Lumi, dúvidas frequentes, encaminhamento | 8 |
-| **04** · Visão Computacional | OCR, validação de receitas | 6 |
-| **05** · Checkout e Pagamentos | PIX, cartão, confirmação | 4 |
-| **06** · Fidelização e Predição | Histórico, ciclo de saúde, recompra | 4 |
-
----
-
-## 📋 MVPs
-
-```
-MVP 1 — Jornada de Compra e Catálogo
-  Catálogo dinâmico · Busca inteligente · Carrinho · Categorias · Recomendações sazonais
-
-MVP 2 — Atendimento e IA (O Diferencial)
-  Chatbot Lumi · Dúvidas frequentes automáticas · Encaminhamento de casos complexos
-  OCR de receitas · Validação por IA · Trava de controlados · Protocolos rastreáveis
-
-MVP 3 — Checkout e Recorrência
-  PIX e Cartão · Cadastro/Login · Perfil · Histórico · Predição de recompra · LGPD
-```
-
----
-
-## 🤖 Escopo do Chatbot Lumi
-
-O Lumi opera dentro de um escopo definido para garantir segurança e conformidade:
-
-| O Lumi **faz** | O Lumi **não faz** |
+| Épico | Escopo |
 |---|---|
-| Responder dúvidas frequentes automaticamente | Indicar ou recomendar medicamentos |
-| Fornecer orientações básicas de posologia e armazenamento | Realizar diagnósticos médicos |
-| Encaminhar casos complexos para o atendente | Responder questões clínicas ou sobre interações medicamentosas |
-| Gerar protocolo rastreável para cada sessão | Atender casos que exijam julgamento farmacêutico |
+| **EP01** | Acesso e Conta |
+| **EP02** | Catálogo e Descoberta |
+| **EP03** | Atendimento pelo Chat |
+| **EP04** | Carrinho e Checkout |
+| **EP05** | Pedidos e Acompanhamento |
+| **EP06** | Painel de Atendimento |
+| **EP07** | Gestão de Produtos e Estoque |
+| **EP08** | Indicadores e Gestão |
 
 ---
 
-## 🔒 Segurança e Conformidade
+## 🧭 Escopo Atual do Produto
 
-- Dados de saúde e CPF criptografados em trânsito (**TLS 1.2+**) e em repouso (**AES-256**)
-- Autenticação via **JWT** + login social com **OAuth 2.0** (Google)
-- Controle de acesso por perfil: Cliente · Atendente · Administrador
-- Gestão de consentimento de dados de saúde em conformidade com a **LGPD (Lei nº 13.709/2018)**
+A direção atual do projeto prioriza:
 
----
+- atendimento automatizado por opções, e não por IA generativa;
+- transbordo para atendimento humano quando necessário;
+- fluxo de compra simples e funcional;
+- apoio operacional à equipe da farmácia;
+- arquitetura organizada para manutenção e evolução.
 
-## ⚡ Metas de Performance
-
-| Indicador | Meta |
-|---|---|
-| Carregamento da Home | ≤ 3 segundos |
-| Resposta do Chatbot Lumi | ≤ 4 segundos |
-| Processamento de OCR | ≤ 5 segundos |
-| Uptime do sistema | ≥ 99% |
+Funcionalidades antigas ligadas a **OCR**, **IA generativa no chat** e **automação preditiva** não fazem parte da linha principal atual do sistema.
 
 ---
 
-## 🛠️ Stack
+## 📋 Requisitos em Destaque
+
+### ✅ Funcionais
+- autenticação de usuários;
+- catálogo com busca e categorias;
+- atendimento digital por chat;
+- transbordo para humano;
+- carrinho, checkout e pedidos;
+- gestão de estoque e produtos;
+- indicadores gerenciais básicos.
+
+### 🛡️ Não Funcionais
+- interface fluida e responsiva;
+- comunicação segura;
+- proteção de dados;
+- persistência confiável;
+- organização arquitetural em **MVVM**.
+
+---
+
+## 🧱 Arquitetura
+
+O projeto segue a abordagem **MVVM (Model-View-ViewModel)**, favorecendo a separação entre:
+
+- **View**: interface e interação com o usuário;
+- **ViewModel**: regras de apresentação e estados da tela;
+- **Model/Repository**: modelos de dados e acesso às fontes de persistência.
+
+Essa organização facilita a manutenção, a legibilidade e a evolução do sistema.
+
+---
+
+## 🛠️ Stack Tecnológica
 
 | Camada | Tecnologia |
 |---|---|
-| Mobile | Flutter (Android 8.0+ · iOS 14+) |
-| IA / Chatbot | IA Generativa (NLP + Vision/OCR) |
-| Autenticação | JWT · OAuth 2.0 (Google) |
-| Pagamentos | API de terceiros (PIX · Cartão) |
-| Diagramas | PlantUML |
+| **Mobile** | Flutter |
+| **Linguagem** | Dart |
+| **Backend / Dados** | Supabase |
+| **Arquitetura** | MVVM |
+| **Diagramas** | PlantUML |
 
 ---
 
-## 👤 Atores do Sistema
+## 👤 Perfis do Sistema
 
 | Ator | Responsabilidade |
 |---|---|
-| **Cliente (Paciente)** | Navega, compra, envia receitas e interage com o Lumi |
-| **Atendente / Farmacêutico** | Recebe protocolos encaminhados e dá continuidade ao atendimento humano |
-| **Administrador** | Gerencia catálogo, estoque, base de dúvidas do Lumi e configurações do sistema |
+| **Cliente** | Navega no catálogo, conversa no chat, monta pedido e acompanha compras |
+| **Atendente / Farmacêutico** | Acompanha conversas e realiza atendimento operacional |
+| **Gerente / Administrador** | Acompanha indicadores, produtos, estoque e visão gerencial |
 
 ---
 
-*Repositório acadêmico — Projeto Integrador 3º Semestre · UNIFEOB*
+## 🚧 Status do Projeto
+
+Este repositório representa a evolução acadêmica e prática do **Farmácia Americana App**, com foco em consolidar uma primeira solução digital funcional, coerente com o contexto do negócio e aberta a melhorias futuras.
+
+---
+
+*Repositório acadêmico — Projeto Integrado 3º Semestre · UNIFEOB*
