@@ -176,9 +176,6 @@ A direção atual do projeto prioriza:
 - fluxo de compra simples e funcional;
 - apoio operacional à equipe da farmácia;
 - arquitetura organizada para manutenção e evolução.
-
-Funcionalidades antigas ligadas a **OCR**, **IA generativa no chat** e **automação preditiva** não fazem parte da linha principal atual do sistema.
-
 ---
 
 ## 📋 Requisitos em Destaque
