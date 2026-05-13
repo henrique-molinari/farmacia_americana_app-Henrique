@@ -1,5 +1,4 @@
 import 'package:farmacia_app/features/client/account/data/models/delivery_address_model.dart';
-import 'package:flutter/material.dart';
 
 class MockDeliveryAddresses {
   static List<DeliveryAddress> getAddresses() {
@@ -8,20 +7,26 @@ class MockDeliveryAddresses {
         id: 'home-main',
         title: 'Minha Casa',
         recipient: 'Ricardo Oliveira',
-        streetLine: 'Avenida Paulista, 1578 - Apto 42',
-        districtLine: 'Bela Vista, São Paulo - SP',
+        street: 'Avenida Paulista',
+        number: '1578',
+        complement: 'Apto 42',
+        neighborhood: 'Bela Vista',
+        city: 'São Paulo',
+        state: 'SP',
         zipCode: '01310-200',
-        icon: Icons.home_rounded,
         isDefault: true,
       ),
       DeliveryAddress(
         id: 'work',
         title: 'Trabalho',
         recipient: 'Ricardo Oliveira',
-        streetLine: 'Rua das Olimpíadas, 205 - 12º andar',
-        districtLine: 'Vila Olímpia, São Paulo - SP',
+        street: 'Rua das Olimpíadas',
+        number: '205',
+        complement: '12º andar',
+        neighborhood: 'Vila Olímpia',
+        city: 'São Paulo',
+        state: 'SP',
         zipCode: '04551-000',
-        icon: Icons.work_rounded,
       ),
     ];
   }

@@ -30,6 +30,8 @@
 	<string>Precisamos acessar suas imagens para anexar fotos no atendimento da Farmacia Americana.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Precisamos acessar a camera para tirar fotos dos produtos cadastrados.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Precisamos acessar sua localização para preencher seu endereço de entrega.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

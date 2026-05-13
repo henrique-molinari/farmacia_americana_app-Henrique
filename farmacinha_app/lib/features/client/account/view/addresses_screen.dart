@@ -7,6 +7,7 @@ import 'package:farmacia_app/features/client/account/view_model/addresses_view_m
 import 'package:farmacia_app/features/client/home_client/view/home_client_screen.dart';
 import 'package:farmacia_app/features/client/orders/list/view/orders_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 const Color _addressesScreenBackground = Color(0xFFFFF8F7);
 const Color _addressesSurfaceWhite = Color(0xFFFFFFFF);
@@ -29,6 +30,12 @@ class AddressesScreen extends StatefulWidget {
 
 class _AddressesScreenState extends State<AddressesScreen> {
   final AddressesViewModel viewModel = AddressesViewModel();
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel.loadAddresses();
+  }
 
   @override
   void dispose() {
@@ -79,37 +86,41 @@ class _AddressesScreenState extends State<AddressesScreen> {
       body: ListenableBuilder(
         listenable: viewModel,
         builder: (context, _) {
-          final horizontalPadding =
-              MediaQuery.of(context).size.width < 360 ? 16.0 : 24.0;
+          final width = MediaQuery.of(context).size.width;
+          final horizontalPadding = width < 360 ? 16.0 : 24.0;
+          final contentMaxWidth = width >= 900 ? 840.0 : double.infinity;
 
-          return SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              horizontalPadding,
-              26,
-              horizontalPadding,
-              32,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeroCard(),
-                const SizedBox(height: 38),
-                _buildSectionHeader(),
-                const SizedBox(height: 26),
-                for (final address in viewModel.addresses) ...[
-                  _AddressCard(
-                    address: address,
-                    onEdit: () => _showInfo(viewModel.editAddressMessage),
-                    onDelete: () => _showInfo(viewModel.deleteAddressMessage),
+          return RefreshIndicator(
+            color: Pallete.primaryRed,
+            onRefresh: viewModel.loadAddresses,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                26,
+                horizontalPadding,
+                32,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeroCard(width),
+                      const SizedBox(height: 32),
+                      _buildSectionHeader(),
+                      const SizedBox(height: 22),
+                      _buildAddressesContent(),
+                      const SizedBox(height: 14),
+                      _buildMapCard(),
+                      const SizedBox(height: 42),
+                      _buildAddAddressButton(),
+                      const SizedBox(height: 10),
+                    ],
                   ),
-                  const SizedBox(height: 26),
-                ],
-                const SizedBox(height: 14),
-                _buildMapCard(),
-                const SizedBox(height: 48),
-                _buildAddAddressButton(),
-                const SizedBox(height: 10),
-              ],
+                ),
+              ),
             ),
           );
         },
@@ -118,55 +129,85 @@ class _AddressesScreenState extends State<AddressesScreen> {
     );
   }
 
-  Widget _buildHeroCard() {
+  Widget _buildHeroCard(double width) {
+    final compact = width < 420;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(32, 32, 32, 28),
+      padding: EdgeInsets.fromLTRB(
+        compact ? 22 : 32,
+        compact ? 26 : 32,
+        compact ? 22 : 32,
+        compact ? 24 : 28,
+      ),
       decoration: BoxDecoration(
         color: _addressesSurfaceLow,
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(compact ? 24 : 32),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Onde você está?',
-            style: TextStyle(
-              color: _addressesText,
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-              height: 1.1,
-            ),
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'Gerencie seus endereços para uma\nentrega rápida e segura dos seus\ncuidados farmacêuticos.',
-            style: TextStyle(
-              color: _addressesMutedText,
-              fontSize: 16,
-              height: 1.55,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Center(
-            child: Transform.rotate(
-              angle: math.pi / 15,
-              child: Container(
-                width: 94,
-                height: 94,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE31B23),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: const Icon(
-                  Icons.location_on_rounded,
-                  color: Colors.white,
-                  size: 50,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final showSideIcon = constraints.maxWidth >= 540;
+          final text = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Onde você está?',
+                style: TextStyle(
+                  color: _addressesText,
+                  fontSize: compact ? 24 : 28,
+                  fontWeight: FontWeight.w900,
+                  height: 1.1,
                 ),
               ),
-            ),
-          ),
-        ],
+              const SizedBox(height: 14),
+              const Text(
+                'Gerencie seus endereços para uma entrega rápida e segura dos seus cuidados farmacêuticos.',
+                style: TextStyle(
+                  color: _addressesMutedText,
+                  fontSize: 16,
+                  height: 1.55,
+                ),
+              ),
+            ],
+          );
+
+          if (showSideIcon) {
+            return Row(
+              children: [
+                Expanded(child: text),
+                const SizedBox(width: 24),
+                _buildLocationIcon(size: 92),
+              ],
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              text,
+              const SizedBox(height: 24),
+              Center(child: _buildLocationIcon(size: compact ? 82 : 94)),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLocationIcon({required double size}) {
+    return Transform.rotate(
+      angle: math.pi / 15,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE31B23),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Icon(
+          Icons.location_on_rounded,
+          color: Colors.white,
+          size: size * 0.54,
+        ),
       ),
     );
   }
@@ -203,6 +244,46 @@ class _AddressesScreenState extends State<AddressesScreen> {
     );
   }
 
+  Widget _buildAddressesContent() {
+    if (viewModel.isLoading && viewModel.addresses.isEmpty) {
+      return const _AddressesLoadingState();
+    }
+
+    if (viewModel.errorMessage != null && viewModel.addresses.isEmpty) {
+      return _AddressesMessageState(
+        icon: Icons.cloud_off_rounded,
+        title: 'Não foi possível carregar',
+        message: viewModel.errorMessage!,
+        actionLabel: 'Tentar novamente',
+        onAction: viewModel.loadAddresses,
+      );
+    }
+
+    if (viewModel.addresses.isEmpty) {
+      return _AddressesMessageState(
+        icon: Icons.add_location_alt_rounded,
+        title: 'Nenhum endereço cadastrado',
+        message: 'Adicione um local de entrega para agilizar seus pedidos.',
+        actionLabel: 'Adicionar endereço',
+        onAction: () => _openAddressForm(),
+      );
+    }
+
+    return Column(
+      children: [
+        for (final address in viewModel.addresses) ...[
+          _AddressCard(
+            address: address,
+            isBusy: viewModel.isDeleting,
+            onEdit: () => _openAddressForm(address: address),
+            onDelete: () => _confirmDelete(address),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ],
+    );
+  }
+
   Widget _buildMapCard() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(28),
@@ -229,31 +310,35 @@ class _AddressesScreenState extends State<AddressesScreen> {
             Positioned(
               left: 26,
               bottom: 20,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.94),
-                  borderRadius: BorderRadius.circular(999),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: const FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    'COBERTURA AMERICANA HEALTH',
-                    style: TextStyle(
-                      color: _addressesText,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2.2,
+              right: 26,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.94),
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'COBERTURA AMERICANA HEALTH',
+                      style: TextStyle(
+                        color: _addressesText,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2.2,
+                      ),
                     ),
                   ),
                 ),
@@ -273,9 +358,10 @@ class _AddressesScreenState extends State<AddressesScreen> {
           height: 68,
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () => _showInfo(viewModel.addAddressMessage),
+            onPressed: viewModel.isSaving ? null : () => _openAddressForm(),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFE30613),
+              disabledBackgroundColor: const Color(0xFFE30613).withOpacity(0.45),
               foregroundColor: Colors.white,
               elevation: 18,
               shadowColor: const Color(0xFFE30613).withOpacity(0.32),
@@ -297,6 +383,69 @@ class _AddressesScreenState extends State<AddressesScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openAddressForm({DeliveryAddress? address}) async {
+    final result = await showModalBottomSheet<AddressActionResult>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ListenableBuilder(
+        listenable: viewModel,
+        builder: (context, _) {
+          return _AddressFormSheet(
+            address: address,
+            viewModel: viewModel,
+          );
+        },
+      ),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    _showInfo(result.message);
+  }
+
+  Future<void> _confirmDelete(DeliveryAddress address) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: _addressesSurfaceWhite,
+          title: const Text('Excluir endereço'),
+          content: Text(
+            'Deseja excluir "${address.title}" dos seus locais de entrega?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: _addressesErrorText,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true) {
+      return;
+    }
+
+    final result = await viewModel.deleteAddress(address);
+    if (!mounted) {
+      return;
+    }
+    _showInfo(result.message);
   }
 
   void _onBottomNavTap(int index) {
@@ -331,19 +480,516 @@ class _AddressesScreenState extends State<AddressesScreen> {
       ..showSnackBar(
         SnackBar(
           content: Text(message),
-          duration: const Duration(milliseconds: 900),
+          duration: const Duration(milliseconds: 1400),
         ),
       );
   }
 }
 
+class _AddressFormSheet extends StatefulWidget {
+  final DeliveryAddress? address;
+  final AddressesViewModel viewModel;
+
+  const _AddressFormSheet({
+    required this.address,
+    required this.viewModel,
+  });
+
+  @override
+  State<_AddressFormSheet> createState() => _AddressFormSheetState();
+}
+
+class _AddressFormSheetState extends State<_AddressFormSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _titleController;
+  late final TextEditingController _recipientController;
+  late final TextEditingController _streetController;
+  late final TextEditingController _numberController;
+  late final TextEditingController _complementController;
+  late final TextEditingController _neighborhoodController;
+  late final TextEditingController _cityController;
+  late final TextEditingController _stateController;
+  late final TextEditingController _zipCodeController;
+  late bool _isDefault;
+  double? _latitude;
+  double? _longitude;
+
+  @override
+  void initState() {
+    super.initState();
+    final address = widget.address;
+    _titleController = TextEditingController(text: address?.title ?? '');
+    _recipientController = TextEditingController(text: address?.recipient ?? '');
+    _streetController = TextEditingController(text: address?.street ?? '');
+    _numberController = TextEditingController(text: address?.number ?? '');
+    _complementController =
+        TextEditingController(text: address?.complement ?? '');
+    _neighborhoodController =
+        TextEditingController(text: address?.neighborhood ?? '');
+    _cityController = TextEditingController(text: address?.city ?? '');
+    _stateController = TextEditingController(text: address?.state ?? '');
+    _zipCodeController = TextEditingController(text: address?.zipCode ?? '');
+    _latitude = address?.latitude;
+    _longitude = address?.longitude;
+    _isDefault = address?.isDefault ?? widget.viewModel.addresses.isEmpty;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _recipientController.dispose();
+    _streetController.dispose();
+    _numberController.dispose();
+    _complementController.dispose();
+    _neighborhoodController.dispose();
+    _cityController.dispose();
+    _stateController.dispose();
+    _zipCodeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final maxWidth = MediaQuery.of(context).size.width >= 700 ? 640.0 : double.infinity;
+
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              color: _addressesScreenBackground,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(22, 14, 22, 26),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 42,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: _addressesSurfaceHighest,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.address == null
+                                  ? 'Novo Endereço'
+                                  : 'Editar Endereço',
+                              style: const TextStyle(
+                                color: _addressesText,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      _LocationButton(
+                        isLoading: widget.viewModel.isUsingLocation,
+                        onPressed: _useCurrentLocation,
+                      ),
+                      if (_latitude != null && _longitude != null) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          'Localização salva: ${_latitude!.toStringAsFixed(5)}, ${_longitude!.toStringAsFixed(5)}',
+                          style: const TextStyle(
+                            color: _addressesMutedText,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 18),
+                      _AddressTextField(
+                        controller: _titleController,
+                        label: 'Nome do endereço',
+                        icon: Icons.bookmark_rounded,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 12),
+                      _AddressTextField(
+                        controller: _recipientController,
+                        label: 'Destinatário',
+                        icon: Icons.person_rounded,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 12),
+                      _AddressTextField(
+                        controller: _zipCodeController,
+                        label: 'CEP',
+                        icon: Icons.local_post_office_rounded,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          const _CepInputFormatter(),
+                        ],
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 12),
+                      _AddressTextField(
+                        controller: _streetController,
+                        label: 'Rua ou avenida',
+                        icon: Icons.route_rounded,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 12),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final compact = constraints.maxWidth < 460;
+                          final numberField = _AddressTextField(
+                            controller: _numberController,
+                            label: 'Número',
+                            icon: Icons.numbers_rounded,
+                            textInputAction: TextInputAction.next,
+                          );
+                          final complementField = _AddressTextField(
+                            controller: _complementController,
+                            label: 'Complemento',
+                            icon: Icons.apartment_rounded,
+                            isRequired: false,
+                            textInputAction: TextInputAction.next,
+                          );
+
+                          if (compact) {
+                            return Column(
+                              children: [
+                                numberField,
+                                const SizedBox(height: 12),
+                                complementField,
+                              ],
+                            );
+                          }
+
+                          return Row(
+                            children: [
+                              SizedBox(width: 160, child: numberField),
+                              const SizedBox(width: 12),
+                              Expanded(child: complementField),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _AddressTextField(
+                        controller: _neighborhoodController,
+                        label: 'Bairro',
+                        icon: Icons.location_city_rounded,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 12),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final compact = constraints.maxWidth < 460;
+                          final cityField = _AddressTextField(
+                            controller: _cityController,
+                            label: 'Cidade',
+                            icon: Icons.map_rounded,
+                            textInputAction: TextInputAction.next,
+                          );
+                          final stateField = _AddressTextField(
+                            controller: _stateController,
+                            label: 'UF',
+                            icon: Icons.flag_rounded,
+                            maxLength: 2,
+                            textCapitalization: TextCapitalization.characters,
+                            textInputAction: TextInputAction.done,
+                          );
+
+                          if (compact) {
+                            return Column(
+                              children: [
+                                cityField,
+                                const SizedBox(height: 12),
+                                stateField,
+                              ],
+                            );
+                          }
+
+                          return Row(
+                            children: [
+                              Expanded(child: cityField),
+                              const SizedBox(width: 12),
+                              SizedBox(width: 118, child: stateField),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      SwitchListTile.adaptive(
+                        value: _isDefault,
+                        onChanged: (value) => setState(() => _isDefault = value),
+                        contentPadding: EdgeInsets.zero,
+                        activeColor: Pallete.primaryRed,
+                        title: const Text(
+                          'Usar como endereço padrão',
+                          style: TextStyle(
+                            color: _addressesText,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: widget.viewModel.isSaving ? null : _save,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFE30613),
+                            disabledBackgroundColor:
+                                const Color(0xFFE30613).withOpacity(0.45),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: widget.viewModel.isSaving
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.4,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Salvar endereço',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _useCurrentLocation() async {
+    FocusScope.of(context).unfocus();
+    final result = await widget.viewModel.useCurrentLocation();
+    if (!mounted) {
+      return;
+    }
+
+    final address = result.address;
+    if (address != null) {
+      setState(() {
+        if (_titleController.text.trim().isEmpty) {
+          _titleController.text = address.title;
+        }
+        _streetController.text = address.street;
+        _numberController.text = address.number;
+        _neighborhoodController.text = address.neighborhood;
+        _cityController.text = address.city;
+        _stateController.text = address.state;
+        _zipCodeController.text = address.zipCode;
+        _latitude = address.latitude;
+        _longitude = address.longitude;
+      });
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(result.message)));
+  }
+
+  Future<void> _save() async {
+    FocusScope.of(context).unfocus();
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final original = widget.address;
+    final address = DeliveryAddress(
+      id: original?.id ?? 'new-address',
+      userId: original?.userId,
+      title: _titleController.text,
+      recipient: _recipientController.text,
+      street: _streetController.text,
+      number: _numberController.text,
+      complement: _complementController.text,
+      neighborhood: _neighborhoodController.text,
+      city: _cityController.text,
+      state: _stateController.text,
+      zipCode: _zipCodeController.text,
+      latitude: _latitude,
+      longitude: _longitude,
+      isDefault: _isDefault,
+    );
+
+    final result = await widget.viewModel.saveAddress(address);
+    if (!mounted) {
+      return;
+    }
+
+    if (result.success) {
+      Navigator.of(context).pop(result);
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(result.message)));
+  }
+}
+
+class _AddressTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final bool isRequired;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
+  final TextCapitalization textCapitalization;
+
+  const _AddressTextField({
+    required this.controller,
+    required this.label,
+    required this.icon,
+    this.isRequired = true,
+    this.keyboardType,
+    this.textInputAction,
+    this.inputFormatters,
+    this.maxLength,
+    this.textCapitalization = TextCapitalization.sentences,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
+      textCapitalization: textCapitalization,
+      validator: (value) {
+        if (!isRequired) {
+          return null;
+        }
+        if (value == null || value.trim().isEmpty) {
+          return 'Campo obrigatório';
+        }
+        if (label == 'CEP' && value.replaceAll(RegExp(r'\D'), '').length != 8) {
+          return 'CEP inválido';
+        }
+        if (label == 'UF' && value.trim().length != 2) {
+          return 'UF inválida';
+        }
+        return null;
+      },
+      decoration: InputDecoration(
+        counterText: '',
+        filled: true,
+        fillColor: _addressesSurfaceWhite,
+        prefixIcon: Icon(icon, color: Pallete.primaryRed, size: 20),
+        labelText: label,
+        labelStyle: const TextStyle(color: _addressesMutedText),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: _addressesSurfaceHigh),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFE30613), width: 1.4),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: _addressesErrorText),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: _addressesErrorText, width: 1.4),
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationButton extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback onPressed;
+
+  const _LocationButton({
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: OutlinedButton.icon(
+        onPressed: isLoading ? null : onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Pallete.primaryRed,
+          side: const BorderSide(color: _addressesSurfaceHighest),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        icon: isLoading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.my_location_rounded, size: 20),
+        label: Text(
+          isLoading ? 'Buscando localização...' : 'Usar minha localização atual',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
+      ),
+    );
+  }
+}
+
 class _AddressCard extends StatelessWidget {
   final DeliveryAddress address;
+  final bool isBusy;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const _AddressCard({
     required this.address,
+    required this.isBusy,
     required this.onEdit,
     required this.onDelete,
   });
@@ -441,9 +1087,7 @@ class _AddressCard extends StatelessWidget {
           ),
           const SizedBox(height: 22),
           Text(
-            '${address.streetLine}\n'
-            '${address.districtLine}\n'
-            'CEP: ${address.zipCode}',
+            address.formattedLines,
             maxLines: 4,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -452,6 +1096,31 @@ class _AddressCard extends StatelessWidget {
               height: 1.62,
             ),
           ),
+          if (address.latitude != null && address.longitude != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(
+                  Icons.my_location_rounded,
+                  color: _addressesMutedText,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '${address.latitude!.toStringAsFixed(5)}, ${address.longitude!.toStringAsFixed(5)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: _addressesMutedText,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 24),
           const Divider(height: 1, color: _addressesSurfaceLow),
           const SizedBox(height: 18),
@@ -461,7 +1130,7 @@ class _AddressCard extends StatelessWidget {
                 child: SizedBox(
                   height: 48,
                   child: TextButton.icon(
-                    onPressed: onEdit,
+                    onPressed: isBusy ? null : onEdit,
                     style: TextButton.styleFrom(
                       backgroundColor: _addressesSurfaceLow,
                       foregroundColor: _addressesText,
@@ -485,10 +1154,11 @@ class _AddressCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 child: IconButton(
-                  onPressed: onDelete,
+                  onPressed: isBusy ? null : onDelete,
                   style: IconButton.styleFrom(
                     backgroundColor: _addressesErrorContainer,
                     foregroundColor: _addressesErrorText,
+                    disabledBackgroundColor: _addressesErrorContainer.withOpacity(0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -497,6 +1167,87 @@ class _AddressCard extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddressesLoadingState extends StatelessWidget {
+  const _AddressesLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(26),
+      decoration: BoxDecoration(
+        color: _addressesSurfaceWhite,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(color: Color(0xFFE30613)),
+      ),
+    );
+  }
+}
+
+class _AddressesMessageState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  const _AddressesMessageState({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
+      decoration: BoxDecoration(
+        color: _addressesSurfaceWhite,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: Pallete.primaryRed, size: 42),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: _addressesText,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: _addressesMutedText,
+              fontSize: 14,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 18),
+          OutlinedButton(
+            onPressed: onAction,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Pallete.primaryRed,
+              side: const BorderSide(color: _addressesSurfaceHighest),
+            ),
+            child: Text(actionLabel),
           ),
         ],
       ),
@@ -616,6 +1367,33 @@ class _BottomNavItem extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CepInputFormatter extends TextInputFormatter {
+  const _CepInputFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final limited = digits.length > 8 ? digits.substring(0, 8) : digits;
+    final buffer = StringBuffer();
+
+    for (int i = 0; i < limited.length; i++) {
+      if (i == 5) {
+        buffer.write('-');
+      }
+      buffer.write(limited[i]);
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }
