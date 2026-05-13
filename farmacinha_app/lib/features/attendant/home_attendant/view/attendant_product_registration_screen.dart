@@ -55,7 +55,7 @@ class _AttendantProductRegistrationScreenState
       ),
       builder: (context) {
         return SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -63,7 +63,7 @@ class _AttendantProductRegistrationScreenState
                 _ImageSourceTile(
                   icon: Icons.photo_camera_rounded,
                   title: 'Tirar foto',
-                  subtitle: 'Usar a camera do dispositivo',
+                  subtitle: 'Usar a câmera do dispositivo',
                   onTap: () {
                     Navigator.pop(context);
                     _pickImage(ImageSource.camera);
@@ -230,6 +230,8 @@ class _AttendantProductRegistrationScreenState
             titleSpacing: 0,
             title: const Text(
               'Controle de Estoque',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Pallete.primaryRed,
                 fontSize: 21,
@@ -402,7 +404,11 @@ class _AttendantProductRegistrationScreenState
                 .map(
                   (category) => DropdownMenuItem(
                     value: category,
-                    child: Text(category),
+                    child: Text(
+                      category,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 )
                 .toList(),
@@ -412,39 +418,53 @@ class _AttendantProductRegistrationScreenState
                 value == null ? 'Selecione uma categoria.' : null,
           ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 340;
+              final priceField = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _FieldLabel(label: 'PREÇO (R\$)'),
+                  _ProductTextField(
+                    controller: _viewModel.priceController,
+                    hintText: 'R\$ 0,00',
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    validator: _viewModel.validatePrice,
+                  ),
+                ],
+              );
+              final stockField = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _FieldLabel(label: 'ESTOQUE ATUAL'),
+                  _ProductTextField(
+                    controller: _viewModel.stockController,
+                    hintText: '0',
+                    keyboardType: TextInputType.number,
+                    validator: _viewModel.validateStock,
+                  ),
+                ],
+              );
+
+              if (compact) {
+                return Column(
                   children: [
-                    const _FieldLabel(label: 'PREÇO (R\$)'),
-                    _ProductTextField(
-                      controller: _viewModel.priceController,
-                      hintText: 'R\$ 0,00',
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      validator: _viewModel.validatePrice,
-                    ),
+                    priceField,
+                    const SizedBox(height: 18),
+                    stockField,
                   ],
-                ),
-              ),
-              const SizedBox(width: 22),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _FieldLabel(label: 'ESTOQUE ATUAL'),
-                    _ProductTextField(
-                      controller: _viewModel.stockController,
-                      hintText: '0',
-                      keyboardType: TextInputType.number,
-                      validator: _viewModel.validateStock,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: priceField),
+                  const SizedBox(width: 22),
+                  Expanded(child: stockField),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 24),
           const _FieldLabel(label: 'DATA DE CADASTRO'),
@@ -522,9 +542,12 @@ class _AttendantProductRegistrationScreenState
                   ),
                 )
               : const Icon(Icons.save_rounded, size: 22),
-          label: Text(
-            _viewModel.isSaving ? 'Salvando...' : 'Salvar Produto',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          label: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              _viewModel.isSaving ? 'Salvando...' : 'Salvar Produto',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
           ),
         ),
       ),
@@ -862,7 +885,11 @@ class _ControlledMedicationSwitch extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_rounded, color: Pallete.primaryRed, size: 36),
+              const Icon(
+                Icons.warning_rounded,
+                color: Pallete.primaryRed,
+                size: 36,
+              ),
           const SizedBox(width: 16),
           const Expanded(
             child: Column(
@@ -870,11 +897,15 @@ class _ControlledMedicationSwitch extends StatelessWidget {
               children: [
                 Text(
                   'Medicamento Controlado',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Exige retenção de receita médica',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: Color(0xFF8F7E7C), fontSize: 13),
                 ),
               ],
@@ -924,6 +955,8 @@ class _RegisteredByCard extends StatelessWidget {
               children: [
                 Text(
                   profile.fullName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.black,
                     fontSize: 16,
@@ -933,6 +966,7 @@ class _RegisteredByCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   profile.roleDescription,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFF9E8F8D),
@@ -968,8 +1002,17 @@ class _ImageSourceTile extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       tileColor: const Color(0xFFF4F4F4),
       leading: Icon(icon, color: Pallete.primaryRed),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-      subtitle: Text(subtitle),
+      title: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontWeight: FontWeight.w800),
+      ),
+      subtitle: Text(
+        subtitle,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
       trailing: const Icon(Icons.chevron_right_rounded),
     );
   }

@@ -48,7 +48,7 @@ class HomeClientViewModel extends ChangeNotifier {
       _applyFilters(notify: false);
     } catch (error) {
       debugPrint('Erro ao carregar produtos do Supabase: $error');
-      _errorMessage = 'Erro ao carregar dados da farmacia.';
+      _errorMessage = 'Erro ao carregar dados da farmácia.';
       _allProducts = [];
       _filteredProducts = [];
       _categories = _buildCategories(<Product>[]);
@@ -172,7 +172,7 @@ class HomeClientViewModel extends ChangeNotifier {
   }
 
   void viewProductDetail(Product product) {
-    debugPrint('Usuario visualizando detalhes de: ${product.name}');
+    debugPrint('Usuário visualizando detalhes de: ${product.name}');
   }
 
   List<Product> getPromotionalProducts() {

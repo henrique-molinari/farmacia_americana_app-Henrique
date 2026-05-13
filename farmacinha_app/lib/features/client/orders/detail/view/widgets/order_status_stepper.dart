@@ -109,17 +109,20 @@ class OrderStatusStepper extends StatelessWidget {
             final isDone = stepIndex < _currentStepIndex;
             return SizedBox(
               width: 44,
-              child: Text(
-                _steps[stepIndex].label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight:
-                      isCurrent ? FontWeight.bold : FontWeight.normal,
-                  color:
-                      isCurrent || isDone
-                          ? Pallete.primaryRed
-                          : Pallete.textColor,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  _steps[stepIndex].label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight:
+                        isCurrent ? FontWeight.bold : FontWeight.normal,
+                    color:
+                        isCurrent || isDone
+                            ? Pallete.primaryRed
+                            : Pallete.textColor,
+                  ),
                 ),
               ),
             );
@@ -140,11 +143,15 @@ class OrderStatusStepper extends StatelessWidget {
         children: [
           Icon(Icons.cancel_rounded, color: Colors.grey, size: 28),
           SizedBox(width: 12),
-          Text(
-            'Este pedido foi cancelado',
-            style: TextStyle(
-              color: Colors.grey,
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Text(
+              'Este pedido foi cancelado',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.grey,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

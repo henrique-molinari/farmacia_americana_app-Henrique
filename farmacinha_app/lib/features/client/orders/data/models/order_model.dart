@@ -48,13 +48,13 @@ extension OrderStatusExtension on OrderStatus {
   String get label {
     switch (this) {
       case OrderStatus.pending:
-        return 'Aguardando confirmacao';
+        return 'Aguardando confirmação';
       case OrderStatus.confirmed:
         return 'Confirmado';
       case OrderStatus.preparing:
         return 'Em preparo';
       case OrderStatus.transit:
-        return 'Em transito';
+        return 'Em trânsito';
       case OrderStatus.delivered:
         return 'Entregue';
       case OrderStatus.cancelled:
@@ -99,7 +99,7 @@ extension PaymentMethodExtension on PaymentMethod {
       case PaymentMethod.cashOnDelivery:
         return 'Dinheiro';
       case PaymentMethod.cardOnDelivery:
-        return 'Cartao de Credito';
+        return 'Cartão de Crédito';
     }
   }
 }

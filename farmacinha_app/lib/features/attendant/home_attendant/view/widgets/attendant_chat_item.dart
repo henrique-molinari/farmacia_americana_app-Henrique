@@ -67,15 +67,20 @@ class AttendantChatItem extends StatelessWidget {
                             ),
                           ),
                         ),
-                        Text(
-                          chat.timestamp,
-                          style: TextStyle(
-                            color: chat.isUrgent
-                                ? Pallete.primaryRed
-                                : const Color(0xFF94A3B8),
-                            fontWeight: chat.isUrgent
-                                ? FontWeight.w700
-                                : FontWeight.w600,
+                        Flexible(
+                          child: Text(
+                            chat.timestamp,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              color: chat.isUrgent
+                                  ? Pallete.primaryRed
+                                  : const Color(0xFF94A3B8),
+                              fontWeight: chat.isUrgent
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],

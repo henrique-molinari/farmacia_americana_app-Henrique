@@ -170,30 +170,41 @@ class ProductCard extends StatelessWidget {
                     Row(
                       children: [
                         // Estrelas
-                        SizedBox(
-                          height: 16,
-                          child: Row(
-                            children: List.generate(
-                              5,
-                              (index) => Icon(
-                                index < rating.floor()
-                                    ? Icons.star_rounded
-                                    : index < rating
-                                        ? Icons.star_half_rounded
-                                        : Icons.star_outline_rounded,
-                                size: 14,
-                                color: Pallete.gradient3,
+                        Flexible(
+                          child: SizedBox(
+                            height: 16,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: List.generate(
+                                  5,
+                                  (index) => Icon(
+                                    index < rating.floor()
+                                        ? Icons.star_rounded
+                                        : index < rating
+                                            ? Icons.star_half_rounded
+                                            : Icons.star_outline_rounded,
+                                    size: 14,
+                                    color: Pallete.gradient3,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 6),
                         // Quantidade de avaliações
-                        Text(
-                          '($reviewCount)',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Pallete.textColor,
+                        Flexible(
+                          child: Text(
+                            '($reviewCount)',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Pallete.textColor,
+                            ),
                           ),
                         ),
                       ],
@@ -205,34 +216,40 @@ class ProductCard extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Preço original (se houver desconto)
-                            if (isOnPromotion && discountPercentage != null)
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Preço original (se houver desconto)
+                              if (isOnPromotion && discountPercentage != null)
+                                Text(
+                                  'R\$ ${price.toStringAsFixed(2)}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Pallete.textColor,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+
+                              // Preço atual
                               Text(
-                                'R\$ ${price.toStringAsFixed(2)}',
+                                isOnPromotion && discountPercentage != null
+                                    ? 'R\$ ${(price * (1 - discountPercentage! / 100)).toStringAsFixed(2)}'
+                                    : 'R\$ ${price.toStringAsFixed(2)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Pallete.textColor,
-                                  decoration: TextDecoration.lineThrough,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Pallete.gradient3,
                                 ),
                               ),
-
-                            // Preço atual
-                            Text(
-                              isOnPromotion && discountPercentage != null
-                                  ? 'R\$ ${(price * (1 - discountPercentage! / 100)).toStringAsFixed(2)}'
-                                  : 'R\$ ${price.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Pallete.gradient3,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 8),
                         // Botão de adicionar ao carrinho
                         GestureDetector(
                           onTap: onAddToCart,

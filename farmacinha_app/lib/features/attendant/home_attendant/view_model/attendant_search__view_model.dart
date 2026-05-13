@@ -43,7 +43,7 @@ class AttendantSearchViewModel extends ChangeNotifier {
               initials: conversation.clientInitials,
               name: conversation.clientName,
               cpf: conversation.clientCpf.isEmpty
-                  ? 'CPF nao informado'
+                  ? 'CPF não informado'
                   : conversation.clientCpf,
               timeLabel: _formatRecentTime(
                 conversation.lastMessageAt ?? conversation.updatedAt,

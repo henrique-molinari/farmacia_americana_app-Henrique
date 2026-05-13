@@ -24,6 +24,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final horizontalPadding =
+        MediaQuery.of(context).size.width < 360 ? 16.0 : 24.0;
+
     return Scaffold(
       backgroundColor: _checkoutBg,
       appBar: AppBar(
@@ -65,7 +68,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           return Stack(
             children: [
               SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 18, 24, 140),
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  18,
+                  horizontalPadding,
+                  140,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -80,25 +88,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     _buildSummarySection(),
                     const SizedBox(height: 18),
                     const Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.verified_user_outlined,
-                            size: 16,
-                            color: Pallete.textColor,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'AMBIENTE 100% SEGURO',
-                            style: TextStyle(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.verified_user_outlined,
+                              size: 16,
                               color: Pallete.textColor,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 2,
                             ),
-                          ),
-                        ],
+                            SizedBox(width: 8),
+                            Text(
+                              'AMBIENTE 100% SEGURO',
+                              style: TextStyle(
+                                color: Pallete.textColor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -161,15 +172,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              isDelivery ? 'Entrega' : 'Retirada',
-              style: const TextStyle(
-                color: _checkoutText,
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
+            Expanded(
+              child: Text(
+                isDelivery ? 'Entrega' : 'Retirada',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: _checkoutText,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 12),
             TextButton(
               onPressed: isDelivery ? _openAddressSheet : null,
               child: Text(
@@ -223,6 +238,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       isDelivery
                           ? viewModel.selectedAddress.title
                           : viewModel.storePickupLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: _checkoutText,
                         fontSize: 17,
@@ -234,6 +251,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       isDelivery
                           ? viewModel.selectedAddress.formattedLines
                           : '${viewModel.storePickupAddress}\nRetirada disponível em até 20 min.',
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: _checkoutMuted,
                         fontSize: 15,
@@ -243,11 +262,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ],
                 ),
               ),
-              Icon(
-                isDelivery
-                    ? Icons.location_on_rounded
-                    : Icons.inventory_2_rounded,
-                color: const Color(0xFFD8D0BF),
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Icon(
+                  isDelivery
+                      ? Icons.location_on_rounded
+                      : Icons.inventory_2_rounded,
+                  color: const Color(0xFFD8D0BF),
+                ),
               ),
             ],
           ),
@@ -400,27 +422,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       ),
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        CartViewModel.formatCurrency(viewModel.total),
-                        style: const TextStyle(
-                          color: _checkoutText,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            CartViewModel.formatCurrency(viewModel.total),
+                            style: const TextStyle(
+                              color: _checkoutText,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ),
-                      ),
-                      Text(
-                        'ou 2x de ${CartViewModel.formatCurrency(viewModel.total / 2)}',
-                        style: const TextStyle(
-                          color: _checkoutMuted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.2,
+                        Text(
+                          'ou 2x de ${CartViewModel.formatCurrency(viewModel.total / 2)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            color: _checkoutMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.2,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -462,11 +493,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                   )
                 : const Icon(Icons.chevron_right_rounded),
-            label: Text(
-              viewModel.isProcessingCheckout
-                  ? 'Confirmando...'
-                  : 'Confirmar Pedido',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            label: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                viewModel.isProcessingCheckout
+                    ? 'Confirmando...'
+                    : 'Confirmar Pedido',
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
             ),
           ),
         ),
@@ -516,7 +551,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
       builder: (sheetContext) {
         return SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -614,6 +649,8 @@ class _InfoLine extends StatelessWidget {
         Expanded(
           child: Text(
             value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: _checkoutText,
               fontSize: 14,
@@ -676,6 +713,8 @@ class _PaymentTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: _checkoutText,
                       fontSize: 17,
@@ -685,6 +724,8 @@ class _PaymentTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: subtitleColor,
                       fontSize: 13,
@@ -696,12 +737,15 @@ class _PaymentTile extends StatelessWidget {
                 ],
               ),
             ),
-            AnimatedOpacity(
-              duration: const Duration(milliseconds: 180),
-              opacity: selected ? 1 : 0,
-              child: const Icon(
-                Icons.check_circle_rounded,
-                color: Pallete.primaryRed,
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 180),
+                opacity: selected ? 1 : 0,
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: Pallete.primaryRed,
+                ),
               ),
             ),
           ],
@@ -727,16 +771,26 @@ class _CheckoutSummaryRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: _checkoutMuted, fontSize: 16),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: _checkoutMuted, fontSize: 16),
+          ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: valueColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],

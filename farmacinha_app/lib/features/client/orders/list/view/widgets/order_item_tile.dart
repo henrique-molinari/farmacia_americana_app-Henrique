@@ -80,62 +80,77 @@ class OrderItemTile extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                ...order.items
-                    .take(3)
-                    .map(
-                      (item) => Container(
-                        width: 40,
-                        height: 40,
-                        margin: const EdgeInsets.only(right: 6),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          color: Pallete.grayColor,
-                          image: item.productImageUrl.isEmpty
-                              ? null
-                              : DecorationImage(
-                                  image: NetworkImage(item.productImageUrl),
-                                  fit: BoxFit.cover,
-                                ),
+                Expanded(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      ...order.items.take(3).map(
+                            (item) => Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                color: Pallete.grayColor,
+                                image: item.productImageUrl.isEmpty
+                                    ? null
+                                    : DecorationImage(
+                                        image: NetworkImage(
+                                          item.productImageUrl,
+                                        ),
+                                        fit: BoxFit.cover,
+                                      ),
+                              ),
+                              child: item.productImageUrl.isEmpty
+                                  ? const Icon(
+                                      Icons.medication_rounded,
+                                      color: Pallete.primaryRed,
+                                      size: 20,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                      if (order.items.length > 3)
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: Pallete.grayColor,
+                          ),
+                          child: Center(
+                            child: Text(
+                              '+${order.items.length - 3}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Pallete.textColor,
+                              ),
+                            ),
+                          ),
                         ),
-                        child: item.productImageUrl.isEmpty
-                            ? const Icon(
-                                Icons.medication_rounded,
-                                color: Pallete.primaryRed,
-                                size: 20,
-                              )
-                            : null,
-                      ),
-                    ),
-                if (order.items.length > 3)
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Pallete.grayColor,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '+${order.items.length - 3}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Pallete.textColor,
-                        ),
-                      ),
-                    ),
+                    ],
                   ),
-                const Spacer(),
+                ),
+                const SizedBox(width: 10),
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      'R\$ ${order.totalAmount.toStringAsFixed(2).replaceAll('.', ',')}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Color(0xFF291715),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 110),
+                      child: Text(
+                        'R\$ ${order.totalAmount.toStringAsFixed(2).replaceAll('.', ',')}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Color(0xFF291715),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),
