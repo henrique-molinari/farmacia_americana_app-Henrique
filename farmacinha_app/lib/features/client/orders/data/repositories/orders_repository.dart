@@ -88,7 +88,7 @@ class OrdersRepository {
 
     if (message.contains('Could not find the function') ||
         message.contains('create_order_with_stock')) {
-      return 'A funcao de pedido com estoque ainda nao foi criada no Supabase. Rode o SQL docs/supabase_order_stock.sql.';
+      return 'A função de pedido com estoque ainda não foi criada no Supabase. Rode o SQL docs/supabase_order_stock.sql.';
     }
 
     if (message.contains('Estoque insuficiente')) {
@@ -96,9 +96,9 @@ class OrdersRepository {
     }
 
     if (message.contains('row-level security')) {
-      return 'O Supabase bloqueou a operacao por RLS. Confira as policies e a funcao create_order_with_stock.';
+      return 'O Supabase bloqueou a operação por RLS. Confira as policies e a função create_order_with_stock.';
     }
 
-    return 'Nao foi possivel finalizar o pedido. Detalhe: $message';
+    return 'Não foi possível finalizar o pedido. Detalhe: $message';
   }
 }

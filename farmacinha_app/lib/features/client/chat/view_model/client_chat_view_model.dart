@@ -28,7 +28,7 @@ class ClientChatViewModel extends ChangeNotifier {
   final Map<String, ClientChatBotStep> _steps = {};
 
   ClientChatConversation _conversation = const ClientChatConversation(
-    pharmacyName: 'Farmacia Americana',
+    pharmacyName: 'Farmácia Americana',
     statusLabel: 'ChatBot e equipe de atendimento',
     messages: [],
   );
@@ -43,6 +43,7 @@ class ClientChatViewModel extends ChangeNotifier {
   bool _isInitialized = false;
   bool _isLoading = false;
   bool _isRefreshing = false;
+  bool _isDisposed = false;
   String? _errorMessage;
 
   ClientChatConversation get conversation => _conversation;
@@ -61,6 +62,7 @@ class ClientChatViewModel extends ChangeNotifier {
 
     _isInitialized = true;
     await refreshConversation();
+    if (_isDisposed) return;
     _subscribeToRealtime();
     _startRefreshPolling();
   }
@@ -74,12 +76,13 @@ class ClientChatViewModel extends ChangeNotifier {
     _errorMessage = null;
     if (showLoading) {
       _isLoading = true;
-      notifyListeners();
+      _notifyListenersIfActive();
     }
 
     try {
       final supportConversation = await _repository
           .fetchLatestClientConversation();
+      if (_isDisposed) return;
 
       if (supportConversation == null) {
         if (!showLoading &&
@@ -93,7 +96,7 @@ class ClientChatViewModel extends ChangeNotifier {
         _manualInputContext = null;
         _activeOptionsMessageId = null;
         _conversation = const ClientChatConversation(
-          pharmacyName: 'Farmacia Americana',
+          pharmacyName: 'Farmácia Americana',
           statusLabel: 'ChatBot e equipe de atendimento',
           messages: [],
         );
@@ -108,6 +111,7 @@ class ClientChatViewModel extends ChangeNotifier {
         final messages = await _repository.fetchMessages(
           supportConversation.id,
         );
+        if (_isDisposed) return;
         _activeConversationId = supportConversation.id;
         final isFinished = supportConversation.status == 'finalizado';
         _isHumanAttendanceActive = !isFinished;
@@ -115,7 +119,7 @@ class ClientChatViewModel extends ChangeNotifier {
         _activeOptionsMessageId = null;
         _conversation = ClientChatConversation(
           conversationId: supportConversation.id,
-          pharmacyName: 'Farmacia Americana',
+          pharmacyName: 'Farmácia Americana',
           statusLabel: _statusLabelForConversation(supportConversation),
           attendantName: supportConversation.attendantName,
           isSupportTyping: false,
@@ -124,21 +128,23 @@ class ClientChatViewModel extends ChangeNotifier {
         );
       }
     } catch (error) {
+      if (_isDisposed) return;
       _errorMessage = error.toString().replaceFirst('Exception: ', '');
       if (_conversation.messages.isEmpty) {
         _conversation = const ClientChatConversation(
-          pharmacyName: 'Farmacia Americana',
+          pharmacyName: 'Farmácia Americana',
           statusLabel: 'ChatBot e equipe de atendimento',
           messages: [],
         );
         _openBotStep('main_menu');
       }
     } finally {
+      if (_isDisposed) return;
       _isRefreshing = false;
       if (showLoading) {
         _isLoading = false;
       }
-      notifyListeners();
+      _notifyListenersIfActive();
     }
   }
 
@@ -146,6 +152,7 @@ class ClientChatViewModel extends ChangeNotifier {
     SupportConversationRecord supportConversation,
   ) async {
     final messages = await _repository.fetchMessages(supportConversation.id);
+    if (_isDisposed) return;
     final closingMessage = messages.reversed.firstWhere(
       (message) =>
           (message.senderType == SupportSenderType.system ||
@@ -156,7 +163,7 @@ class ClientChatViewModel extends ChangeNotifier {
               id: 'closed-${supportConversation.id}',
               conversationId: supportConversation.id,
               senderId: null,
-              senderName: 'Farmacia Americana',
+              senderName: 'Farmácia Americana',
               senderType: SupportSenderType.system,
               messageType: SupportMessageType.text,
               body: supportConversation.lastMessagePreview,
@@ -173,7 +180,7 @@ class ClientChatViewModel extends ChangeNotifier {
     _manualInputContext = null;
     _activeOptionsMessageId = null;
     _conversation = const ClientChatConversation(
-      pharmacyName: 'Farmacia Americana',
+      pharmacyName: 'Farmácia Americana',
       statusLabel: 'ChatBot e equipe de atendimento',
       messages: [],
     );
@@ -185,28 +192,31 @@ class ClientChatViewModel extends ChangeNotifier {
   Future<void> resetChat() async {
     _isLoading = true;
     _errorMessage = null;
-    notifyListeners();
+    _notifyListenersIfActive();
 
     try {
       _hiddenConversationId =
           await _repository.resetCurrentClientConversation() ??
           _activeConversationId;
+      if (_isDisposed) return;
     } catch (error) {
+      if (_isDisposed) return;
       _errorMessage = error.toString().replaceFirst('Exception: ', '');
     } finally {
+      if (_isDisposed) return;
       messageController.clear();
       _activeConversationId = null;
       _manualInputContext = null;
       _activeOptionsMessageId = null;
       _isHumanAttendanceActive = false;
       _conversation = const ClientChatConversation(
-        pharmacyName: 'Farmacia Americana',
+        pharmacyName: 'Farmácia Americana',
         statusLabel: 'ChatBot e equipe de atendimento',
         messages: [],
       );
       _openBotStep('main_menu');
       _isLoading = false;
-      notifyListeners();
+      _notifyListenersIfActive();
     }
   }
 
@@ -219,6 +229,7 @@ class ClientChatViewModel extends ChangeNotifier {
   }
 
   Future<void> _handleOptionSelection(ClientChatOption option) async {
+    if (_isDisposed) return;
     _appendMessage(
       ClientChatMessage(
         id: 'user-choice-${DateTime.now().microsecondsSinceEpoch}',
@@ -264,6 +275,7 @@ class ClientChatViewModel extends ChangeNotifier {
   }
 
   Future<void> sendMessage() async {
+    if (_isDisposed) return;
     final draft = messageController.text.trim();
 
     if (draft.isEmpty || !canSendFreeText) {
@@ -284,6 +296,7 @@ class ClientChatViewModel extends ChangeNotifier {
 
     try {
       final conversationId = await _ensureConversationForManualInteraction();
+      if (_isDisposed) return;
       await _repository.sendClientText(
         conversationId: conversationId,
         text: draft,
@@ -301,16 +314,19 @@ class ClientChatViewModel extends ChangeNotifier {
         return;
       }
     } catch (error) {
+      if (_isDisposed) return;
       _errorMessage = error.toString().replaceFirst('Exception: ', '');
-      notifyListeners();
+      _notifyListenersIfActive();
     }
   }
 
   Future<String?> attachFile(ClientAttachmentType type) async {
+    if (_isDisposed) return null;
     if (type == ClientAttachmentType.photo) {
       final permissionGranted = await _requestMediaPermission();
+      if (_isDisposed) return null;
       if (!permissionGranted) {
-        return 'Nao foi possivel acessar as midias do dispositivo.';
+        return 'Não foi possível acessar as mídias do dispositivo.';
       }
     }
 
@@ -323,6 +339,7 @@ class ClientChatViewModel extends ChangeNotifier {
           ? ['pdf', 'doc', 'docx', 'txt', 'rtf']
           : null,
     );
+    if (_isDisposed) return null;
 
     if (result == null || result.files.isEmpty) {
       return null;
@@ -364,6 +381,7 @@ class ClientChatViewModel extends ChangeNotifier {
     try {
       if (_isHumanAttendanceActive || _manualInputContext != null) {
         final conversationId = await _ensureConversationForManualInteraction();
+        if (_isDisposed) return null;
         await _repository.sendClientAttachmentSummary(
           conversationId: conversationId,
           fileName: file.name,
@@ -381,10 +399,12 @@ class ClientChatViewModel extends ChangeNotifier {
         );
       }
     } catch (error) {
-      _errorMessage = error.toString().replaceFirst('Exception: ', '');
+      if (!_isDisposed) {
+        _errorMessage = error.toString().replaceFirst('Exception: ', '');
+      }
     }
 
-    notifyListeners();
+    _notifyListenersIfActive();
     return null;
   }
 
@@ -393,7 +413,7 @@ class ClientChatViewModel extends ChangeNotifier {
       'main_menu': const ClientChatBotStep(
         id: 'main_menu',
         message:
-            'Bem-vindo(a) a Farmacia Americana.\n\nComo posso te ajudar hoje?\nEscolha uma opcao no proprio chat para continuar.',
+            'Bem-vindo(a) a Farmácia Americana.\n\nComo posso te ajudar hoje?\nEscolha uma opção no próprio chat para continuar.',
         options: [
           ClientChatOption(
             id: 'products',
@@ -438,7 +458,7 @@ class ClientChatViewModel extends ChangeNotifier {
           ),
           ClientChatOption(
             id: 'similar_products',
-            label: 'Ver opcoes similares',
+            label: 'Ver opções similares',
             nextStepId: 'similar_products',
           ),
         ],
@@ -449,17 +469,17 @@ class ClientChatViewModel extends ChangeNotifier {
         options: const [
           ClientChatOption(
             id: 'piercing',
-            label: 'Perfuracao e brincos',
+            label: 'Perfuração e brincos',
             nextStepId: 'piercing',
           ),
           ClientChatOption(
             id: 'injectable',
-            label: 'Aplicacao de medicamento injetavel',
+            label: 'Aplicação de medicamento injetável',
             nextStepId: 'injectable',
           ),
           ClientChatOption(
             id: 'pressure',
-            label: 'Afericao de pressao ou glicemia',
+            label: 'Aferição de pressão ou glicemia',
             nextStepId: 'pressure',
           ),
           ClientChatOption(
@@ -472,7 +492,7 @@ class ClientChatViewModel extends ChangeNotifier {
       'orders_menu': _menuStep(
         id: 'orders_menu',
         message:
-            'Pedidos & Entregas\n\nEscolha a opcao relacionada ao seu pedido.',
+            'Pedidos & Entregas\n\nEscolha a opção relacionada ao seu pedido.',
         options: const [
           ClientChatOption(
             id: 'track_order',
@@ -502,22 +522,22 @@ class ClientChatViewModel extends ChangeNotifier {
         options: const [
           ClientChatOption(
             id: 'working_hours',
-            label: 'Horario de funcionamento',
+            label: 'Horário de funcionamento',
             nextStepId: 'working_hours',
           ),
           ClientChatOption(
             id: 'store_address',
-            label: 'Endereco das lojas',
+            label: 'Endereço das lojas',
             nextStepId: 'store_address',
           ),
           ClientChatOption(
             id: 'discounts',
-            label: 'Descontos e clube de beneficios',
+            label: 'Descontos e clube de benefícios',
             nextStepId: 'discounts',
           ),
           ClientChatOption(
             id: 'prescription',
-            label: 'Receita medica',
+            label: 'Receita médica',
             nextStepId: 'prescription',
           ),
           ClientChatOption(
@@ -563,25 +583,25 @@ class ClientChatViewModel extends ChangeNotifier {
       'similar_products': _leafStep(
         id: 'similar_products',
         message:
-            'Podemos sugerir opcoes similares, genericos ou outras apresentacoes. Escolha atendimento humano para receber indicacoes mais especificas.',
+            'Podemos sugerir opções similares, genéricos ou outras apresentações. Escolha atendimento humano para receber indicações mais especificas.',
         parentStepId: 'products_menu',
       ),
       'piercing': _leafStep(
         id: 'piercing',
         message:
-            'Realizamos perfuracao de lobulo e colocacao de brincos em horarios especificos. Leve documento e, para menores, o responsavel legal.',
+            'Realizamos perfuração de lóbulo e colocação de brincos em horários específicos. Leve documento e, para menores, o responsável legal.',
         parentStepId: 'services_menu',
       ),
       'injectable': _leafStep(
         id: 'injectable',
         message:
-            'Aplicacao de medicamento injetavel depende de prescricao valida e triagem no local. Voce pode anexar a receita para adiantar a avaliacao.',
+            'Aplicação de medicamento injetável depende de prescrição válida e triagem no local. Você pode anexar a receita para adiantar a avaliação.',
         parentStepId: 'services_menu',
       ),
       'pressure': _leafStep(
         id: 'pressure',
         message:
-            'Afericao de pressao e glicemia geralmente e feita por ordem de chegada. Para confirmar disponibilidade da unidade, escolha atendimento humano.',
+            'Afericao de pressao e glicemia geralmente é feita por ordem de chegada. Para confirmar disponibilidade da unidade, escolha atendimento humano.',
         parentStepId: 'services_menu',
       ),
       'other_service': _leafStep(
@@ -599,13 +619,13 @@ class ClientChatViewModel extends ChangeNotifier {
       'delivery_problem': _leafStep(
         id: 'delivery_problem',
         message:
-            'Sinto muito pelo transtorno. Para resolver mais rapido, escolha atendimento humano com urgencia e, se quiser, anexe comprovantes ou fotos.',
+            'Sinto muito pelo transtorno. Para resolver mais rápido, escolha atendimento humano com urgência e, se quiser, anexe comprovantes ou fotos.',
         parentStepId: 'orders_menu',
       ),
       'exchange_return': _leafStep(
         id: 'exchange_return',
         message:
-            'Trocas e devolucoes dependem do tipo de produto e da integridade da embalagem. Posso te direcionar ao atendimento humano para validar seu caso.',
+            'Trocas e devoluções dependem do tipo de produto e da integridade da embalagem. Posso te direcionar ao atendimento humano para validar seu caso.',
         parentStepId: 'orders_menu',
       ),
       'wrong_item': _leafStep(
@@ -629,19 +649,19 @@ class ClientChatViewModel extends ChangeNotifier {
       'discounts': _leafStep(
         id: 'discounts',
         message:
-            'Oferecemos promocoes sazonais e beneficios em produtos selecionados. Para consultar regras detalhadas e convenios, o atendimento humano pode te ajudar.',
+            'Oferecemos promoções sazonais e benefícios em produtos selecionados. Para consultar regras detalhadas e convênios, o atendimento humano pode te ajudar.',
         parentStepId: 'general_menu',
       ),
       'prescription': _leafStep(
         id: 'prescription',
         message:
-            'Para medicamentos que exigem receita, voce pode anexar imagem ou documento aqui mesmo. Depois, se quiser, siga para um humano para validacao final.',
+            'Para medicamentos que exigem receita, você pode anexar imagem ou documento aqui mesmo. Depois, se quiser, siga para um humano para validação final.',
         parentStepId: 'general_menu',
       ),
       'other_subject': _leafStep(
         id: 'other_subject',
         message:
-            'Sem problema. Posso te encaminhar para uma pessoa do atendimento ou voce pode voltar ao menu para escolher outra categoria.',
+            'Sem problema. Posso te encaminhar para uma pessoa do atendimento ou você pode voltar ao menu para escolher outra categoria.',
         parentStepId: 'general_menu',
       ),
       'human_now': ClientChatBotStep(
@@ -661,7 +681,7 @@ class ClientChatViewModel extends ChangeNotifier {
       'leave_message_confirmation': const ClientChatBotStep(
         id: 'leave_message_confirmation',
         message:
-            'Seu recado foi registrado com sucesso. Nossa equipe humana dara continuidade assim que possivel.',
+            'Seu recado foi registrado com sucesso. Nossa equipe humana dará continuidade assim que possível.',
         options: [
           ClientChatOption(
             id: 'new_human_attempt',
@@ -675,7 +695,7 @@ class ClientChatViewModel extends ChangeNotifier {
           ),
           ClientChatOption(
             id: 'urgent_from_leave_message',
-            label: 'Falar com humano com urgencia',
+            label: 'Falar com humano com urgência',
             nextStepId: 'urgent_human',
           ),
         ],
@@ -683,14 +703,14 @@ class ClientChatViewModel extends ChangeNotifier {
       'request_callback': const ClientChatBotStep(
         id: 'request_callback',
         message:
-            'Escreva um telefone ou a melhor forma de contato e diga em que horario prefere receber retorno.',
+            'Escreva um telefone ou a melhor forma de contato e diga em que horário prefere receber retorno.',
         options: [],
         enablesManualInput: true,
       ),
       'request_callback_confirmation': const ClientChatBotStep(
         id: 'request_callback_confirmation',
         message:
-            'Solicitacao de retorno registrada. Assim que um atendente estiver disponivel, a equipe fara contato.',
+            'Solicitação de retorno registrada. Assim que um atendente estiver disponível, a equipe fará contato.',
         options: [
           ClientChatOption(
             id: 'human_again',
@@ -704,7 +724,7 @@ class ClientChatViewModel extends ChangeNotifier {
           ),
           ClientChatOption(
             id: 'urgent_from_callback',
-            label: 'Falar com humano com urgencia',
+            label: 'Falar com humano com urgência',
             nextStepId: 'urgent_human',
           ),
         ],
@@ -737,7 +757,7 @@ class ClientChatViewModel extends ChangeNotifier {
         ),
         const ClientChatOption(
           id: 'urgent_human',
-          label: 'Falar com humano com urgencia',
+          label: 'Falar com humano com urgência',
           nextStepId: 'urgent_human',
         ),
       ],
@@ -770,7 +790,7 @@ class ClientChatViewModel extends ChangeNotifier {
         ),
         const ClientChatOption(
           id: 'go-urgent-human',
-          label: 'Falar com humano com urgencia',
+          label: 'Falar com humano com urgência',
           nextStepId: 'urgent_human',
         ),
       ],
@@ -790,6 +810,7 @@ class ClientChatViewModel extends ChangeNotifier {
       urgent: false,
       systemMessage: systemMessage,
     );
+    if (_isDisposed) return conversation.id;
     return conversation.id;
   }
 
@@ -802,9 +823,10 @@ class ClientChatViewModel extends ChangeNotifier {
       final conversation = await _ensureHumanConversation(
         urgent: urgent,
         systemMessage: urgent
-            ? 'Cliente solicitou atendimento humano com urgencia.'
+            ? 'Cliente solicitou atendimento humano com urgência.'
             : 'Cliente solicitou atendimento humano.',
       );
+      if (_isDisposed) return;
 
       await _repository.sendClientText(
         conversationId: conversation.id,
@@ -816,8 +838,9 @@ class ClientChatViewModel extends ChangeNotifier {
         preserveLastPreview: clientMessage,
       );
     } catch (error) {
+      if (_isDisposed) return;
       _errorMessage = error.toString().replaceFirst('Exception: ', '');
-      notifyListeners();
+      _notifyListenersIfActive();
     }
   }
 
@@ -829,6 +852,7 @@ class ClientChatViewModel extends ChangeNotifier {
       urgent: urgent,
       systemMessage: systemMessage,
     );
+    if (_isDisposed) return conversation;
     _activeConversationId = conversation.id;
     _isHumanAttendanceActive = true;
     _conversation = _conversation.copyWith(
@@ -836,11 +860,12 @@ class ClientChatViewModel extends ChangeNotifier {
       statusLabel: _statusLabelForConversation(conversation),
       attendantName: conversation.attendantName,
     );
-    notifyListeners();
+    _notifyListenersIfActive();
     return conversation;
   }
 
   void _openBotStep(String stepId) {
+    if (_isDisposed) return;
     final step = _steps[stepId];
     if (step == null) {
       return;
@@ -856,11 +881,11 @@ class ClientChatViewModel extends ChangeNotifier {
       ClientChatMessage(
         id: 'bot-step-$stepId-${DateTime.now().microsecondsSinceEpoch}',
         sender: ClientChatSender.bot,
-        senderName: 'Farmacia Americana',
+        senderName: 'Farmácia Americana',
         time: _formatCurrentTime(),
         text: step.options.isEmpty
             ? step.message
-            : '${step.message}\n\nA qualquer momento, use as opcoes abaixo para voltar ao menu principal ou pedir atendimento humano urgente.',
+            : '${step.message}\n\nA qualquer momento, use as opções abaixo para voltar ao menu principal ou pedir atendimento humano urgente.',
         options: step.options,
       ),
     );
@@ -877,7 +902,7 @@ class ClientChatViewModel extends ChangeNotifier {
       _isHumanAttendanceActive = false;
     }
 
-    notifyListeners();
+    _notifyListenersIfActive();
   }
 
   ClientChatMessage _mapSupportMessage(SupportMessageRecord message) {
@@ -945,6 +970,7 @@ class ClientChatViewModel extends ChangeNotifier {
   }
 
   void _appendMessage(ClientChatMessage message) {
+    if (_isDisposed) return;
     _conversation = _conversation.copyWith(
       isSupportTyping: false,
       messages: [..._conversation.messages, message],
@@ -1016,7 +1042,7 @@ class ClientChatViewModel extends ChangeNotifier {
   }
 
   void _subscribeToRealtime() {
-    if (_channel != null) {
+    if (_isDisposed || _channel != null) {
       return;
     }
 
@@ -1026,28 +1052,50 @@ class ClientChatViewModel extends ChangeNotifier {
         event: PostgresChangeEvent.all,
         schema: 'public',
         table: 'support_conversations',
-        callback: (_) => unawaited(refreshConversation()),
+        callback: (_) {
+          if (!_isDisposed) {
+            unawaited(refreshConversation());
+          }
+        },
       )
       ..onPostgresChanges(
         event: PostgresChangeEvent.all,
         schema: 'public',
         table: 'support_messages',
-        callback: (_) => unawaited(refreshConversation()),
+        callback: (_) {
+          if (!_isDisposed) {
+            unawaited(refreshConversation());
+          }
+        },
       )
       ..subscribe();
   }
 
   void _startRefreshPolling() {
+    if (_isDisposed) return;
     _refreshTimer?.cancel();
     _refreshTimer = Timer.periodic(
       const Duration(seconds: 2),
-      (_) => unawaited(refreshConversation(showLoading: false)),
+      (_) {
+        if (!_isDisposed) {
+          unawaited(refreshConversation(showLoading: false));
+        }
+      },
     );
+  }
+
+  void _notifyListenersIfActive() {
+    if (!_isDisposed) {
+      notifyListeners();
+    }
   }
 
   @override
   void dispose() {
-    messageController.dispose();
+    if (_isDisposed) {
+      return;
+    }
+    _isDisposed = true;
     _refreshTimer?.cancel();
     _refreshTimer = null;
     final channel = _channel;
@@ -1055,6 +1103,7 @@ class ClientChatViewModel extends ChangeNotifier {
     if (channel != null) {
       unawaited(Supabase.instance.client.removeChannel(channel));
     }
+    messageController.dispose();
     super.dispose();
   }
 }

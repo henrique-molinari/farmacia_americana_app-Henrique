@@ -60,13 +60,16 @@ class _AddressesScreenState extends State<AddressesScreen> {
           Padding(
             padding: EdgeInsets.only(right: 18),
             child: Center(
-              child: Text(
-                'Pharmacy Care',
-                style: TextStyle(
-                  color: Color(0xFFB90014),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  fontStyle: FontStyle.italic,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'Pharmacy Care',
+                  style: TextStyle(
+                    color: Color(0xFFB90014),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
             ),
@@ -76,8 +79,16 @@ class _AddressesScreenState extends State<AddressesScreen> {
       body: ListenableBuilder(
         listenable: viewModel,
         builder: (context, _) {
+          final horizontalPadding =
+              MediaQuery.of(context).size.width < 360 ? 16.0 : 24.0;
+
           return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 26, 24, 32),
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              26,
+              horizontalPadding,
+              32,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -174,13 +185,18 @@ class _AddressesScreenState extends State<AddressesScreen> {
             ),
           ),
         ),
-        Text(
-          viewModel.registeredAddressesLabel,
-          style: const TextStyle(
-            color: Color(0xFFB90014),
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 3,
+        Flexible(
+          child: Text(
+            viewModel.registeredAddressesLabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: Color(0xFFB90014),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 3,
+            ),
           ),
         ),
       ],
@@ -229,13 +245,16 @@ class _AddressesScreenState extends State<AddressesScreen> {
                     ),
                   ],
                 ),
-                child: const Text(
-                  'COBERTURA AMERICANA HEALTH',
-                  style: TextStyle(
-                    color: _addressesText,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2.2,
+                child: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'COBERTURA AMERICANA HEALTH',
+                    style: TextStyle(
+                      color: _addressesText,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2.2,
+                    ),
                   ),
                 ),
               ),
@@ -267,6 +286,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
             icon: const Icon(Icons.add_rounded, size: 28),
             label: const Text(
               'Novo Endereço',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -365,6 +386,8 @@ class _AddressCard extends StatelessWidget {
                   children: [
                     Text(
                       address.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: _addressesText,
                         fontSize: 20,
@@ -375,6 +398,8 @@ class _AddressCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'Destinatário: ${address.recipient}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: _addressesMutedText,
                         fontSize: 14,
@@ -387,22 +412,27 @@ class _AddressCard extends StatelessWidget {
               ),
               if (address.isDefault) ...[
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _addressesSoftBlue,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'PADRÃO',
-                    style: TextStyle(
-                      color: _addressesBlueText,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _addressesSoftBlue,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'PADRÃO',
+                        style: TextStyle(
+                          color: _addressesBlueText,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -414,6 +444,8 @@ class _AddressCard extends StatelessWidget {
             '${address.streetLine}\n'
             '${address.districtLine}\n'
             'CEP: ${address.zipCode}',
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: _addressesMutedText,
               fontSize: 16,
@@ -498,26 +530,34 @@ class _AddressesBottomNavBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _BottomNavItem(
-                icon: Icons.home_rounded,
-                label: 'INÍCIO',
-                onTap: () => onTap(0),
+              Expanded(
+                child: _BottomNavItem(
+                  icon: Icons.home_rounded,
+                  label: 'INÍCIO',
+                  onTap: () => onTap(0),
+                ),
               ),
-              _BottomNavItem(
-                icon: Icons.favorite_rounded,
-                label: 'FAVORITOS',
-                onTap: () => onTap(1),
+              Expanded(
+                child: _BottomNavItem(
+                  icon: Icons.favorite_rounded,
+                  label: 'FAVORITOS',
+                  onTap: () => onTap(1),
+                ),
               ),
-              _BottomNavItem(
-                icon: Icons.receipt_long_rounded,
-                label: 'PEDIDOS',
-                onTap: () => onTap(2),
+              Expanded(
+                child: _BottomNavItem(
+                  icon: Icons.receipt_long_rounded,
+                  label: 'PEDIDOS',
+                  onTap: () => onTap(2),
+                ),
               ),
-              _BottomNavItem(
-                icon: Icons.person_rounded,
-                label: 'PERFIL',
-                selected: true,
-                onTap: () => onTap(3),
+              Expanded(
+                child: _BottomNavItem(
+                  icon: Icons.person_rounded,
+                  label: 'PERFIL',
+                  selected: true,
+                  onTap: () => onTap(3),
+                ),
               ),
             ],
           ),
@@ -546,7 +586,6 @@ class _BottomNavItem extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(999),
       child: Container(
-        width: selected ? 92 : 66,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? _addressesErrorContainer : Colors.transparent,

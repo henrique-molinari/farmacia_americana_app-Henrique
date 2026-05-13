@@ -237,6 +237,8 @@ class _AccountScreenState extends State<AccountScreen> {
               children: [
                 Text(
                   user?.name ?? 'Usuário',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -246,6 +248,8 @@ class _AccountScreenState extends State<AccountScreen> {
                 const SizedBox(height: 3),
                 Text(
                   user?.email ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 13,
                     color: Pallete.textColor,
@@ -264,6 +268,8 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   child: Text(
                     viewModel.loyaltyTier,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -282,109 +288,98 @@ class _AccountScreenState extends State<AccountScreen> {
   // ─── GRID DE MENU ───────────────────────────────────────────────────────────
 
   Widget _buildMenuGrid() {
-    return Column(
-      children: [
-        // Linha 1
-        Row(
-          children: [
-            Expanded(
-              child: _MenuTile(
-                icon: Icons.shopping_bag_rounded,
-                iconBgColor: Pallete.primaryRed.withOpacity(0.1),
-                iconColor: Pallete.primaryRed,
-                title: 'Meus Pedidos',
-                subtitle: 'Veja seu histórico de compras',
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const OrdersScreen()),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MenuTile(
-                icon: Icons.badge_rounded,
-                iconBgColor: Pallete.accentYellow.withOpacity(0.2),
-                iconColor: const Color(0xFF705D00),
-                title: 'Dados Pessoais',
-                subtitle: 'Edite suas informações de perfil',
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const PersonalDataScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
+    final tiles = [
+      _MenuTile(
+        icon: Icons.shopping_bag_rounded,
+        iconBgColor: Pallete.primaryRed.withOpacity(0.1),
+        iconColor: Pallete.primaryRed,
+        title: 'Meus Pedidos',
+        subtitle: 'Veja seu histórico de compras',
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const OrdersScreen()),
+          );
+        },
+      ),
+      _MenuTile(
+        icon: Icons.badge_rounded,
+        iconBgColor: Pallete.accentYellow.withOpacity(0.2),
+        iconColor: const Color(0xFF705D00),
+        title: 'Dados Pessoais',
+        subtitle: 'Edite suas informações de perfil',
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const PersonalDataScreen()),
+          );
+        },
+      ),
+      _MenuTile(
+        icon: Icons.favorite_rounded,
+        iconBgColor: const Color(0xFFFFDAD6),
+        iconColor: const Color(0xFFBA1A1A),
+        title: 'Produtos Favoritos',
+        subtitle: 'Sua lista de desejos e recorrentes',
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const FavoriteProductsScreen()),
+          );
+        },
+      ),
+      _MenuTile(
+        icon: Icons.location_on_rounded,
+        iconBgColor: const Color(0xFFCDE5FF).withOpacity(0.5),
+        iconColor: const Color(0xFF005F93),
+        title: 'Endereços',
+        subtitle: 'Gerencie seus locais de entrega',
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AddressesScreen()),
+          );
+        },
+      ),
+      _MenuTile(
+        icon: Icons.credit_card_rounded,
+        iconBgColor: const Color(0xFFFDDBD7),
+        iconColor: const Color(0xFF5D3F3C),
+        title: 'Métodos de Pagamento',
+        subtitle: 'Cartões e formas de pagamento',
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const PaymentMethodsScreen()),
+          );
+        },
+      ),
+      _LogoutTile(onTap: () => _showLogoutDialog()),
+    ];
 
-        // Linha 2
-        Row(
-          children: [
-            Expanded(
-              child: _MenuTile(
-                icon: Icons.favorite_rounded,
-                iconBgColor: const Color(0xFFFFDAD6),
-                iconColor: const Color(0xFFBA1A1A),
-                title: 'Produtos Favoritos',
-                subtitle: 'Sua lista de desejos e recorrentes',
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const FavoriteProductsScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MenuTile(
-                icon: Icons.location_on_rounded,
-                iconBgColor: const Color(0xFFCDE5FF).withOpacity(0.5),
-                iconColor: const Color(0xFF005F93),
-                title: 'Endereços',
-                subtitle: 'Gerencie seus locais de entrega',
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const AddressesScreen()),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 340) {
+          return Column(
+            children: [
+              for (final tile in tiles) ...[
+                tile,
+                if (tile != tiles.last) const SizedBox(height: 12),
+              ],
+            ],
+          );
+        }
 
-        // Linha 3
-        Row(
+        return Column(
           children: [
-            Expanded(
-              child: _MenuTile(
-                icon: Icons.credit_card_rounded,
-                iconBgColor: const Color(0xFFFDDBD7),
-                iconColor: const Color(0xFF5D3F3C),
-                title: 'Métodos de Pagamento',
-                subtitle: 'Cartões e formas de pagamento',
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const PaymentMethodsScreen(),
-                    ),
-                  );
-                },
+            for (var index = 0; index < tiles.length; index += 2) ...[
+              Row(
+                children: [
+                  Expanded(child: tiles[index]),
+                  const SizedBox(width: 12),
+                  Expanded(child: tiles[index + 1]),
+                ],
               ),
-            ),
-            const SizedBox(width: 12),
-            // Botão Sair
-            Expanded(child: _LogoutTile(onTap: () => _showLogoutDialog())),
+              if (index < tiles.length - 2) const SizedBox(height: 12),
+            ],
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -502,6 +497,8 @@ class _MenuTileState extends State<_MenuTile> {
               const SizedBox(height: 12),
               Text(
                 widget.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
@@ -511,6 +508,8 @@ class _MenuTileState extends State<_MenuTile> {
               const SizedBox(height: 3),
               Text(
                 widget.subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 11,
                   color: Pallete.textColor,
@@ -584,6 +583,8 @@ class _LogoutTileState extends State<_LogoutTile> {
               const SizedBox(height: 12),
               const Text(
                 'Sair',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
@@ -593,6 +594,8 @@ class _LogoutTileState extends State<_LogoutTile> {
               const SizedBox(height: 3),
               const Text(
                 'Encerrar sessão no dispositivo',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 11,
                   color: Color(0xFF93000D),

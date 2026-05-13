@@ -105,7 +105,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
             builder: (context, _) {
               return IconButton(
                 onPressed: _viewModel.isLoading ? null : _confirmResetChat,
-                tooltip: 'Recomecar chat',
+                tooltip: 'Recomeçar chat',
                 icon: const Icon(
                   Icons.restart_alt_rounded,
                   color: Pallete.primaryRed,
@@ -156,7 +156,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'O atendimento comeca pelo ChatBot com opcoes clicaveis. Quando necessario, a conversa e encaminhada para uma pessoa do time.',
+                        'O atendimento começa pelo ChatBot com opções clicáveis. Quando necessário, a conversa é encaminhada para uma pessoa do time.',
                         style: TextStyle(
                           color: Color(0xFF5D3F3C),
                           fontSize: 13.5,
@@ -265,7 +265,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
       ),
       builder: (sheetContext) {
         return SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -280,7 +280,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Escolha se deseja enviar uma imagem da galeria ou um documento compativel.',
+                  'Escolha se deseja enviar uma imagem da galeria ou um documento compatível.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Pallete.textColor,
@@ -333,9 +333,9 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Recomecar chat?'),
+          title: const Text('Recomeçar chat?'),
           content: const Text(
-            'A conversa atual sera limpa desta tela e o menu inicial aparecera novamente.',
+            'A conversa atual será limpa desta tela e o menu inicial aparecerá novamente.',
           ),
           actions: [
             TextButton(
@@ -344,7 +344,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Recomecar'),
+              child: const Text('Recomeçar'),
             ),
           ],
         );
@@ -430,6 +430,8 @@ class _DayPill extends StatelessWidget {
       ),
       child: Text(
         label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: const TextStyle(
           color: Color(0xFF9A6E66),
           fontSize: 11,
@@ -605,6 +607,8 @@ class _OptionChip extends StatelessWidget {
         ),
         child: Text(
           option.label,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: enabled ? Pallete.primaryRed : const Color(0xFF8E8E8E),
             fontSize: 13,
@@ -672,6 +676,8 @@ class _AttachmentPreview extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   attachment.fileDetails,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: message.isFromClient
                         ? Colors.white.withOpacity(0.82)
@@ -778,7 +784,7 @@ class _ChatComposer extends StatelessWidget {
                   decoration: InputDecoration(
                     hintText: isEnabled
                         ? 'Escreva sua mensagem...'
-                        : 'Escolha uma opcao no chat para continuar...',
+                        : 'Escolha uma opção no chat para continuar...',
                     hintStyle: const TextStyle(
                       color: Color(0xFF9D9D9D),
                       fontWeight: FontWeight.w500,
@@ -859,6 +865,8 @@ class _AttachmentOptionTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Color(0xFF291715),
                       fontSize: 15,
@@ -868,6 +876,8 @@ class _AttachmentOptionTile extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Pallete.textColor,
                       fontSize: 12.5,

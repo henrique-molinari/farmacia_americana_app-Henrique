@@ -164,7 +164,7 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
                 padding: const EdgeInsets.all(24),
                 child: Text(
                   _viewModel.errorMessage ??
-                      'Nenhuma conversa disponivel no momento.',
+                      'Nenhuma conversa disponível no momento.',
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -272,7 +272,7 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
         return AlertDialog(
           title: const Text('Encerrar atendimento?'),
           content: const Text(
-            'A conversa sera finalizada, limpa da tela do atendente e o cliente recebera a mensagem de encerramento.',
+            'A conversa será finalizada, limpa da tela do atendente e o cliente receberá a mensagem de encerramento.',
           ),
           actions: [
             TextButton(
@@ -304,7 +304,7 @@ class _AttendantChatDetailScreenState extends State<AttendantChatDetailScreen> {
         ..showSnackBar(
           SnackBar(
             content: Text(
-              _viewModel.errorMessage ?? 'Nao foi possivel encerrar.',
+              _viewModel.errorMessage ?? 'Não foi possível encerrar.',
             ),
           ),
         );
@@ -531,6 +531,8 @@ class _AttachmentContent extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       message.fileDetails ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFF8B8B8B),
                         fontSize: 12.5,
@@ -579,13 +581,17 @@ class _TypingIndicator extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            'Cliente digitando...',
-            style: TextStyle(
-              fontSize: 13,
-              fontStyle: FontStyle.italic,
-              color: const Color(0xFF9A887F).withOpacity(0.92),
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Text(
+              'Cliente digitando...',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                color: const Color(0xFF9A887F).withOpacity(0.92),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
