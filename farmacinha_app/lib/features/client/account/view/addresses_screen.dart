@@ -511,6 +511,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
   late final TextEditingController _stateController;
   late final TextEditingController _zipCodeController;
   late bool _isDefault;
+  String? _lastSearchedZipCode;
   double? _latitude;
   double? _longitude;
 
@@ -648,6 +649,20 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                           const _CepInputFormatter(),
                         ],
                         textInputAction: TextInputAction.next,
+                        onChanged: _onZipCodeChanged,
+                        suffix: widget.viewModel.isSearchingZipCode
+                            ? const Padding(
+                                padding: EdgeInsets.all(14),
+                                child: SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFFE30613),
+                                  ),
+                                ),
+                              )
+                            : null,
                       ),
                       const SizedBox(height: 12),
                       _AddressTextField(
@@ -825,6 +840,38 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
       ..showSnackBar(SnackBar(content: Text(result.message)));
   }
 
+  Future<void> _onZipCodeChanged(String value) async {
+    final cleanZipCode = value.replaceAll(RegExp(r'\D'), '');
+    if (cleanZipCode.length != 8) {
+      _lastSearchedZipCode = null;
+      return;
+    }
+    if (cleanZipCode == _lastSearchedZipCode) {
+      return;
+    }
+
+    _lastSearchedZipCode = cleanZipCode;
+    final result = await widget.viewModel.searchZipCode(cleanZipCode);
+    if (!mounted || result.message.isEmpty) {
+      return;
+    }
+
+    final address = result.address;
+    if (address != null) {
+      setState(() {
+        _zipCodeController.text = address.zipCode;
+        _streetController.text = address.street;
+        _neighborhoodController.text = address.neighborhood;
+        _cityController.text = address.city;
+        _stateController.text = address.state;
+      });
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(result.message)));
+  }
+
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) {
@@ -875,6 +922,8 @@ class _AddressTextField extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final int? maxLength;
   final TextCapitalization textCapitalization;
+  final ValueChanged<String>? onChanged;
+  final Widget? suffix;
 
   const _AddressTextField({
     required this.controller,
@@ -886,6 +935,8 @@ class _AddressTextField extends StatelessWidget {
     this.inputFormatters,
     this.maxLength,
     this.textCapitalization = TextCapitalization.sentences,
+    this.onChanged,
+    this.suffix,
   });
 
   @override
@@ -897,6 +948,7 @@ class _AddressTextField extends StatelessWidget {
       inputFormatters: inputFormatters,
       maxLength: maxLength,
       textCapitalization: textCapitalization,
+      onChanged: onChanged,
       validator: (value) {
         if (!isRequired) {
           return null;
@@ -917,6 +969,7 @@ class _AddressTextField extends StatelessWidget {
         filled: true,
         fillColor: _addressesSurfaceWhite,
         prefixIcon: Icon(icon, color: Pallete.primaryRed, size: 20),
+        suffixIcon: suffix,
         labelText: label,
         labelStyle: const TextStyle(color: _addressesMutedText),
         enabledBorder: OutlineInputBorder(
