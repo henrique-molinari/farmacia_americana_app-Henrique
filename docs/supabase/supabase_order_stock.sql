@@ -78,10 +78,10 @@ begin
       raise exception 'Produto nao encontrado ou inativo.';
     end if;
 
-    if v_product.stock < v_quantity then
+    if v_product.stock_quantity < v_quantity then
       raise exception 'Estoque insuficiente para %. Disponivel: %.',
         v_product.name,
-        v_product.stock;
+        v_product.stock_quantity;
     end if;
 
     v_product_name := coalesce(nullif(v_item ->> 'product_name', ''), v_product.name);
@@ -91,7 +91,7 @@ begin
     );
 
     update public.products
-    set stock = stock - v_quantity
+    set stock_quantity = stock_quantity - v_quantity
     where id = v_product.id;
 
     insert into public.order_items (
