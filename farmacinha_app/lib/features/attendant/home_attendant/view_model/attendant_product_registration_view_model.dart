@@ -1,13 +1,9 @@
-import 'dart:typed_data';
-
 import 'package:farmacia_app/features/attendant/home_attendant/data/models/attendant_stock_product_model.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/data/repositories/attendant_products_repository.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/data/repositories/product_ai_repository.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view_model/attendant_profile_data_store.dart';
 import 'package:farmacia_app/features/client/home_client/data/models/product_model.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 enum AttendantStockControlMode { list, form }
 
@@ -16,20 +12,18 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     AttendantProductsRepository? repository,
     ProductAiRepository? productAiRepository,
     AttendantProfileDataStore? profileStore,
-    ImagePicker? imagePicker,
-  })  : _repository = repository ?? AttendantProductsRepository.instance,
-        _productAiRepository = productAiRepository ?? ProductAiRepository(),
-        _profileStore = profileStore ?? AttendantProfileDataStore.instance,
-        _imagePicker = imagePicker ?? ImagePicker() {
+  }) : _repository = repository ?? AttendantProductsRepository.instance,
+       _productAiRepository = productAiRepository ?? ProductAiRepository(),
+       _profileStore = profileStore ?? AttendantProfileDataStore.instance {
     dateController.text = _formatDate(_registrationDate);
     searchController.addListener(_applyProductFilters);
+    imageUrlController.addListener(notifyListeners);
     refreshProducts();
   }
 
   final AttendantProductsRepository _repository;
   final ProductAiRepository _productAiRepository;
   final AttendantProfileDataStore _profileStore;
-  final ImagePicker _imagePicker;
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
@@ -37,6 +31,7 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
   final TextEditingController stockController = TextEditingController();
   final TextEditingController dateController = TextEditingController();
   final TextEditingController searchController = TextEditingController();
+  final TextEditingController imageUrlController = TextEditingController();
 
   final List<String> categories = const [
     'Analgésicos',
@@ -50,9 +45,6 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
 
   String? _editingProductId;
   String? _selectedCategory;
-  String? _existingImageUrl;
-  String? _imageExtension;
-  Uint8List? _selectedImageBytes;
   DateTime _registrationDate = DateTime.now();
   bool _isControlled = false;
   bool _isSaving = false;
@@ -66,8 +58,7 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
 
   String? get editingProductId => _editingProductId;
   String? get selectedCategory => _selectedCategory;
-  String? get existingImageUrl => _existingImageUrl;
-  Uint8List? get selectedImageBytes => _selectedImageBytes;
+  String get imageUrl => imageUrlController.text.trim();
   DateTime get registrationDate => _registrationDate;
   bool get isControlled => _isControlled;
   bool get isSaving => _isSaving;
@@ -77,7 +68,8 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
   AttendantStockControlMode get mode => _mode;
   List<AttendantStockProduct> get products => _filteredProducts;
   AttendantProfileData get profile => _profileStore.data;
-  bool get isEditing => _editingProductId != null && _editingProductId!.isNotEmpty;
+  bool get isEditing =>
+      _editingProductId != null && _editingProductId!.isNotEmpty;
 
   void loadEditingProduct(Product? product) {
     if (_loadedProduct || product == null) return;
@@ -86,10 +78,12 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     _editingProductId = product.id;
     nameController.text = product.name;
     descriptionController.text = product.description;
-    priceController.text = product.price.toStringAsFixed(2).replaceAll('.', ',');
+    priceController.text = product.price
+        .toStringAsFixed(2)
+        .replaceAll('.', ',');
     stockController.text = '0';
     _selectedCategory = _normalizeCategory(product.category);
-    _existingImageUrl = product.imageUrl.isEmpty ? null : product.imageUrl;
+    imageUrlController.text = product.imageUrl;
     _mode = AttendantStockControlMode.form;
     notifyListeners();
   }
@@ -122,15 +116,16 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     _editingProductId = product.id;
     nameController.text = product.name;
     descriptionController.text = product.description;
-    priceController.text = product.price.toStringAsFixed(2).replaceAll('.', ',');
+    priceController.text = product.price
+        .toStringAsFixed(2)
+        .replaceAll('.', ',');
     stockController.text = product.stockQuantity.toString();
-    _selectedCategory = _normalizeCategory(product.category) ?? product.category;
+    _selectedCategory =
+        _normalizeCategory(product.category) ?? product.category;
     if (!categories.contains(_selectedCategory)) {
       _selectedCategory = null;
     }
-    _existingImageUrl = product.imageUrl.isEmpty ? null : product.imageUrl;
-    _selectedImageBytes = null;
-    _imageExtension = null;
+    imageUrlController.text = product.imageUrl;
     _registrationDate = product.registrationDate ?? DateTime.now();
     dateController.text = _formatDate(_registrationDate);
     _isControlled = product.isControlled;
@@ -160,39 +155,6 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<ProductImagePickResult> pickImage(ImageSource source) async {
-    final granted = await _requestPermission(source);
-    if (!granted) {
-      return const ProductImagePickResult(
-        success: false,
-        message: 'Permissão negada para acessar a imagem.',
-      );
-    }
-
-    final pickedFile = await _imagePicker.pickImage(
-      source: source,
-      imageQuality: 85,
-      maxWidth: 1600,
-    );
-    if (pickedFile == null) {
-      return const ProductImagePickResult(success: false);
-    }
-
-    final bytes = await pickedFile.readAsBytes();
-    if (bytes.length > 5 * 1024 * 1024) {
-      return const ProductImagePickResult(
-        success: false,
-        message: 'Selecione uma imagem de até 5MB.',
-      );
-    }
-
-    _selectedImageBytes = bytes;
-    _imageExtension = pickedFile.name.split('.').last;
-    notifyListeners();
-
-    return const ProductImagePickResult(success: true);
-  }
-
   Future<ProductSaveResult> saveProduct() async {
     if (_selectedCategory == null) {
       return const ProductSaveResult(
@@ -216,8 +178,7 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
           registrationDate: _registrationDate,
           isControlled: _isControlled,
         ),
-        imageBytes: _selectedImageBytes,
-        imageExtension: _imageExtension,
+        imageUrl: imageUrlController.text.trim(),
       );
 
       final wasEditing = isEditing;
@@ -274,7 +235,8 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     }
   }
 
-  Future<ProductDescriptionGenerationResult> generateProductDescription() async {
+  Future<ProductDescriptionGenerationResult>
+  generateProductDescription() async {
     final productName = nameController.text.trim();
     if (productName.isEmpty) {
       return const ProductDescriptionGenerationResult(
@@ -287,8 +249,9 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final description =
-          await _productAiRepository.generateDescription(productName);
+      final description = await _productAiRepository.generateDescription(
+        productName,
+      );
 
       if (description.trim().isEmpty) {
         return const ProductDescriptionGenerationResult(
@@ -336,6 +299,20 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     return null;
   }
 
+  String? validateImageUrl(String? value) {
+    final imageUrl = value?.trim() ?? '';
+    if (imageUrl.isEmpty) return null;
+
+    final uri = Uri.tryParse(imageUrl);
+    final isValidImageUrl =
+        uri != null &&
+        uri.hasScheme &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
+
+    return isValidImageUrl ? null : 'Informe uma URL de imagem válida.';
+  }
+
   double parsePrice(String value) {
     final normalized = value
         .replaceAll('R\$', '')
@@ -350,10 +327,12 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     if (query.isEmpty) {
       _filteredProducts = List<AttendantStockProduct>.from(_products);
     } else {
-      _filteredProducts = _products.where((product) {
-        return product.name.toLowerCase().contains(query) ||
-            product.category.toLowerCase().contains(query);
-      }).toList(growable: false);
+      _filteredProducts = _products
+          .where((product) {
+            return product.name.toLowerCase().contains(query) ||
+                product.category.toLowerCase().contains(query);
+          })
+          .toList(growable: false);
     }
 
     if (notify) notifyListeners();
@@ -362,9 +341,6 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
   void _clearForm() {
     _editingProductId = null;
     _selectedCategory = null;
-    _existingImageUrl = null;
-    _imageExtension = null;
-    _selectedImageBytes = null;
     _registrationDate = DateTime.now();
     _isControlled = false;
     _loadedProduct = false;
@@ -372,20 +348,8 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
     descriptionController.clear();
     priceController.clear();
     stockController.clear();
+    imageUrlController.clear();
     dateController.text = _formatDate(_registrationDate);
-  }
-
-  Future<bool> _requestPermission(ImageSource source) async {
-    if (source == ImageSource.camera) {
-      final status = await Permission.camera.request();
-      return status.isGranted || status.isLimited;
-    }
-
-    final photos = await Permission.photos.request();
-    if (photos.isGranted || photos.isLimited) return true;
-
-    final storage = await Permission.storage.request();
-    return storage.isGranted || storage.isLimited;
   }
 
   String _formatDate(DateTime date) {
@@ -405,35 +369,24 @@ class AttendantProductRegistrationViewModel extends ChangeNotifier {
   @override
   void dispose() {
     searchController.removeListener(_applyProductFilters);
+    imageUrlController.removeListener(notifyListeners);
     searchController.dispose();
     nameController.dispose();
     descriptionController.dispose();
     priceController.dispose();
     stockController.dispose();
     dateController.dispose();
+    imageUrlController.dispose();
     _productAiRepository.dispose();
     super.dispose();
   }
-}
-
-class ProductImagePickResult {
-  final bool success;
-  final String? message;
-
-  const ProductImagePickResult({
-    required this.success,
-    this.message,
-  });
 }
 
 class ProductSaveResult {
   final bool success;
   final String message;
 
-  const ProductSaveResult({
-    required this.success,
-    required this.message,
-  });
+  const ProductSaveResult({required this.success, required this.message});
 }
 
 class ProductDescriptionGenerationResult {

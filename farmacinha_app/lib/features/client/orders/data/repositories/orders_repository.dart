@@ -89,6 +89,7 @@ class OrdersRepository {
     if (message.contains('Could not find the function') ||
         message.contains('create_order_with_stock')) {
       return 'A função de pedido com estoque ainda não foi criada no Supabase. Rode o SQL docs/supabase_order_stock.sql.';
+      return 'A funcao de pedido com estoque ainda nao foi criada no Supabase. Rode o SQL docs/supabase/supabase_order_stock.sql.';
     }
 
     if (message.contains('Estoque insuficiente')) {
