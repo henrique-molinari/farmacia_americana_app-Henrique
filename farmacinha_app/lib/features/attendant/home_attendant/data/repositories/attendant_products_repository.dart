@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:farmacia_app/core/utils/date_time_utils.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/data/models/attendant_stock_product_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -48,7 +46,6 @@ class AttendantProductsRepository {
       AttendantProductsRepository._();
 
   static const String _productsTable = 'products';
-  static const String _productImagesBucket = 'product-images';
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -62,26 +59,16 @@ class AttendantProductsRepository {
 
     return response
         .map<AttendantStockProduct>(
-          (product) => AttendantStockProduct.fromSupabaseMap(
-            product as Map<String, dynamic>,
-          ),
+          (product) => AttendantStockProduct.fromSupabaseMap(product),
         )
         .toList(growable: false);
   }
 
   Future<void> saveProduct({
     required AttendantProductPayload payload,
-    Uint8List? imageBytes,
-    String? imageExtension,
+    String? imageUrl,
   }) async {
     final userId = _client.auth.currentUser?.id;
-    final imageUrl = imageBytes == null
-        ? null
-        : await _uploadProductImage(
-            bytes: imageBytes,
-            extension: imageExtension ?? 'jpg',
-            productId: payload.id,
-          );
     final data = payload.toSupabaseMap(imageUrl: imageUrl, userId: userId);
 
     if (payload.id == null || payload.id!.isEmpty) {
@@ -93,43 +80,5 @@ class AttendantProductsRepository {
 
   Future<void> deleteProduct(String productId) async {
     await _client.from(_productsTable).delete().eq('id', productId);
-  }
-
-  Future<String> _uploadProductImage({
-    required Uint8List bytes,
-    required String extension,
-    String? productId,
-  }) async {
-    final normalizedExtension = extension.replaceAll('.', '').toLowerCase();
-    final timestamp = nowUtc().millisecondsSinceEpoch;
-    final owner = _client.auth.currentUser?.id ?? 'anonymous';
-    final safeProductId = productId?.isNotEmpty == true ? productId : 'new';
-    final filePath = '$owner/$safeProductId-$timestamp.$normalizedExtension';
-
-    await _client.storage
-        .from(_productImagesBucket)
-        .uploadBinary(
-          filePath,
-          bytes,
-          fileOptions: FileOptions(
-            contentType: _contentTypeFor(normalizedExtension),
-            upsert: true,
-          ),
-        );
-
-    return _client.storage.from(_productImagesBucket).getPublicUrl(filePath);
-  }
-
-  String _contentTypeFor(String extension) {
-    switch (extension) {
-      case 'png':
-        return 'image/png';
-      case 'webp':
-        return 'image/webp';
-      case 'jpeg':
-      case 'jpg':
-      default:
-        return 'image/jpeg';
-    }
   }
 }

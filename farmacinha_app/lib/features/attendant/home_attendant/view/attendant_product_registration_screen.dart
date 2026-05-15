@@ -1,12 +1,9 @@
-import 'dart:typed_data';
-
 import 'package:farmacia_app/core/palette/pallete.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/data/models/attendant_stock_product_model.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view_model/attendant_product_registration_view_model.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view_model/attendant_profile_data_store.dart';
 import 'package:farmacia_app/features/client/home_client/data/models/product_model.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 class AttendantProductRegistrationScreen extends StatefulWidget {
   const AttendantProductRegistrationScreen({super.key});
@@ -44,56 +41,6 @@ class _AttendantProductRegistrationScreenState
     super.dispose();
   }
 
-  Future<void> _selectImageSource() async {
-    FocusScope.of(context).unfocus();
-
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _ImageSourceTile(
-                  icon: Icons.photo_camera_rounded,
-                  title: 'Tirar foto',
-                  subtitle: 'Usar a câmera do dispositivo',
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickImage(ImageSource.camera);
-                  },
-                ),
-                const SizedBox(height: 10),
-                _ImageSourceTile(
-                  icon: Icons.photo_library_rounded,
-                  title: 'Escolher da galeria',
-                  subtitle: 'Selecionar PNG ou JPG salvo',
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickImage(ImageSource.gallery);
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _pickImage(ImageSource source) async {
-    final result = await _viewModel.pickImage(source);
-    if (result.message != null && mounted) {
-      _showSnackBar(result.message!);
-    }
-  }
-
   Future<void> _selectDate() async {
     final selectedDate = await showDatePicker(
       context: context,
@@ -103,9 +50,9 @@ class _AttendantProductRegistrationScreenState
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: Pallete.primaryRed,
-                ),
+            colorScheme: Theme.of(
+              context,
+            ).colorScheme.copyWith(primary: Pallete.primaryRed),
           ),
           child: child ?? const SizedBox.shrink(),
         );
@@ -221,7 +168,9 @@ class _AttendantProductRegistrationScreenState
             elevation: 0,
             surfaceTintColor: const Color(0xFFF9F9F9),
             leading: IconButton(
-              onPressed: isForm ? _viewModel.showProductList : () => Navigator.pop(context),
+              onPressed: isForm
+                  ? _viewModel.showProductList
+                  : () => Navigator.pop(context),
               icon: const Icon(
                 Icons.arrow_back_rounded,
                 color: Pallete.primaryRed,
@@ -338,11 +287,18 @@ class _AttendantProductRegistrationScreenState
       child: ListView(
         padding: const EdgeInsets.fromLTRB(22, 22, 22, 112),
         children: [
-          _ImagePickerBox(
-            bytes: _viewModel.selectedImageBytes,
-            imageUrl: _viewModel.existingImageUrl,
-            onTap: _selectImageSource,
+          const _FieldLabel(label: 'URL DA IMAGEM'),
+          _ProductTextField(
+            controller: _viewModel.imageUrlController,
+            hintText: 'https://exemplo.com/imagem.jpg',
+            keyboardType: TextInputType.url,
+            suffixIcon: Icons.link_rounded,
+            validator: _viewModel.validateImageUrl,
           ),
+          if (_viewModel.imageUrl.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _ImageUrlPreview(imageUrl: _viewModel.imageUrl),
+          ],
           const SizedBox(height: 26),
           Text(
             _viewModel.isEditing ? 'EDITAR PRODUTO' : 'NOVO PRODUTO',
@@ -428,8 +384,9 @@ class _AttendantProductRegistrationScreenState
                   _ProductTextField(
                     controller: _viewModel.priceController,
                     hintText: 'R\$ 0,00',
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     validator: _viewModel.validatePrice,
                   ),
                 ],
@@ -594,10 +551,7 @@ class _StockProductTile extends StatelessWidget {
   final AttendantStockProduct product;
   final VoidCallback onTap;
 
-  const _StockProductTile({
-    required this.product,
-    required this.onTap,
-  });
+  const _StockProductTile({required this.product, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -673,10 +627,7 @@ class _StateMessage extends StatelessWidget {
   final IconData icon;
   final String message;
 
-  const _StateMessage({
-    required this.icon,
-    required this.message,
-  });
+  const _StateMessage({required this.icon, required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -700,101 +651,73 @@ class _StateMessage extends StatelessWidget {
   }
 }
 
-class _ImagePickerBox extends StatelessWidget {
-  final Uint8List? bytes;
-  final String? imageUrl;
-  final VoidCallback onTap;
+class _ImageUrlPreview extends StatelessWidget {
+  final String imageUrl;
 
-  const _ImagePickerBox({
-    required this.bytes,
-    required this.imageUrl,
-    required this.onTap,
-  });
+  const _ImageUrlPreview({required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
-    final hasLocalImage = bytes != null;
-    final hasRemoteImage = imageUrl != null && imageUrl!.isNotEmpty;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        height: 202,
-        decoration: BoxDecoration(
-          color: const Color(0xFFEFF3F4),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.all(10),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (hasLocalImage)
-                Image.memory(bytes!, fit: BoxFit.cover)
-              else if (hasRemoteImage)
-                Image.network(imageUrl!, fit: BoxFit.cover)
-              else
-                Container(color: const Color(0xFFF9FFFF)),
-              if (!hasLocalImage && !hasRemoteImage)
-                const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.add_a_photo_rounded,
-                        color: Pallete.primaryRed,
-                        size: 46,
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        'ADICIONAR IMAGEM',
-                        style: TextStyle(
-                          color: Color(0xFF5D3F3C),
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'PNG ou JPG até 5MB',
-                        style: TextStyle(color: Color(0xFF9E8F8D)),
-                      ),
-                    ],
-                  ),
-                ),
-              if (hasLocalImage || hasRemoteImage)
-                Positioned(
-                  right: 12,
-                  bottom: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.55),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.edit_rounded, color: Colors.white, size: 16),
-                        SizedBox(width: 6),
-                        Text(
-                          'Trocar',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+    return Container(
+      height: 168,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF3F4),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(10),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: const Color(0xFFF9FFFF),
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.all(18),
+                  child: const Text(
+                    'NÃ£o foi possÃ­vel carregar a imagem',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFF5D3F3C),
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+                );
+              },
+            ),
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
                 ),
-            ],
-          ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.image_rounded, color: Colors.white, size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'PrÃ©via',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -885,11 +808,11 @@ class _ControlledMedicationSwitch extends StatelessWidget {
       ),
       child: Row(
         children: [
-              const Icon(
-                Icons.warning_rounded,
-                color: Pallete.primaryRed,
-                size: 36,
-              ),
+          const Icon(
+            Icons.warning_rounded,
+            color: Pallete.primaryRed,
+            size: 36,
+          ),
           const SizedBox(width: 16),
           const Expanded(
             child: Column(
@@ -978,42 +901,6 @@ class _RegisteredByCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ImageSourceTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _ImageSourceTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      tileColor: const Color(0xFFF4F4F4),
-      leading: Icon(icon, color: Pallete.primaryRed),
-      title: Text(
-        title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w800),
-      ),
-      subtitle: Text(
-        subtitle,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: const Icon(Icons.chevron_right_rounded),
     );
   }
 }
