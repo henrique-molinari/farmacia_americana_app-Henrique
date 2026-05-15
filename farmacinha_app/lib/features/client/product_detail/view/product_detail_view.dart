@@ -22,7 +22,11 @@ class ProductDetailScreen extends StatelessWidget {
           return Scaffold(
             backgroundColor: Colors.white,
             appBar: AppBar(
-              title: Text(product.name),
+              title: Text(
+                product.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               elevation: 0,
               backgroundColor: Colors.white,
               foregroundColor: Colors.black,
@@ -32,11 +36,21 @@ class ProductDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Imagem do Produto
-                  Center(
-                    child: Image.network(
-                      product.imageUrl,
-                      height: 300,
-                      fit: BoxFit.contain,
+                  AspectRatio(
+                    aspectRatio: 1.25,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Image.network(
+                        product.imageUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Center(
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            color: Pallete.textColor,
+                            size: 48,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   
@@ -65,15 +79,21 @@ class ProductDetailScreen extends StatelessWidget {
                         
                         Text(
                           product.name,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                         ),
                         
                         Row(
                           children: [
                             const Icon(Icons.star, color: Colors.amber, size: 20),
-                            Text(
-                              " ${product.rating} (${product.reviewCount} avaliações)",
-                              style: const TextStyle(color: Colors.grey),
+                            Expanded(
+                              child: Text(
+                                " ${product.rating} (${product.reviewCount} avaliações)",
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Colors.grey),
+                              ),
                             ),
                           ],
                         ),
@@ -82,6 +102,8 @@ class ProductDetailScreen extends StatelessWidget {
                         
                         Text(
                           "R\$ ${product.price.toStringAsFixed(2)}",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 28, 
                             color: Colors.green, 

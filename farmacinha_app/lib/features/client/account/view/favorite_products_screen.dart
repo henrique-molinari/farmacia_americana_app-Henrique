@@ -151,52 +151,70 @@ class _FavoriteProductsScreenState extends State<FavoriteProductsScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: viewModel.favoriteProducts.length + 1,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                    childAspectRatio: 0.58,
-                  ),
-                  itemBuilder: (context, index) {
-                    if (index == viewModel.favoriteProducts.length) {
-                      return _buildDiscoverMoreCard();
-                    }
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final crossAxisCount = constraints.maxWidth < 340 ? 1 : 2;
 
-                    final product = viewModel.favoriteProducts[index];
-                    return _ProductCard(
-                      product: product,
-                      isLoadingAddToCart: viewModel.isAddingToCart(product.id),
-                      onFavoriteTap: () => viewModel.removeFromFavorites(product),
-                      onAddTap: () => _showInfo(viewModel.addToCart(product)),
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: viewModel.favoriteProducts.length + 1,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: crossAxisCount == 1 ? 0.86 : 0.58,
+                      ),
+                      itemBuilder: (context, index) {
+                        if (index == viewModel.favoriteProducts.length) {
+                          return _buildDiscoverMoreCard();
+                        }
+
+                        final product = viewModel.favoriteProducts[index];
+                        return _ProductCard(
+                          product: product,
+                          isLoadingAddToCart:
+                              viewModel.isAddingToCart(product.id),
+                          onFavoriteTap: () =>
+                              viewModel.removeFromFavorites(product),
+                          onAddTap: () =>
+                              _showInfo(viewModel.addToCart(product)),
+                        );
+                      },
                     );
                   },
                 ),
                 const SizedBox(height: 26),
                 _buildTipsCard(),
                 const SizedBox(height: 20),
-                GridView.builder(
+                LayoutBuilder(
                   key: _suggestionsKey,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: viewModel.suggestedProducts.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                    childAspectRatio: 0.58,
-                  ),
-                  itemBuilder: (context, index) {
-                    final product = viewModel.suggestedProducts[index];
-                    return _ProductCard(
-                      product: product,
-                      suggested: true,
-                      isLoadingAddToCart: viewModel.isAddingToCart(product.id),
-                      onFavoriteTap: () => viewModel.addToFavorites(product),
-                      onAddTap: () => _showInfo(viewModel.addToCart(product)),
+                  builder: (context, constraints) {
+                    final crossAxisCount = constraints.maxWidth < 340 ? 1 : 2;
+
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: viewModel.suggestedProducts.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: crossAxisCount == 1 ? 0.86 : 0.58,
+                      ),
+                      itemBuilder: (context, index) {
+                        final product = viewModel.suggestedProducts[index];
+                        return _ProductCard(
+                          product: product,
+                          suggested: true,
+                          isLoadingAddToCart:
+                              viewModel.isAddingToCart(product.id),
+                          onFavoriteTap: () =>
+                              viewModel.addToFavorites(product),
+                          onAddTap: () =>
+                              _showInfo(viewModel.addToCart(product)),
+                        );
+                      },
                     );
                   },
                 ),
@@ -237,6 +255,9 @@ class _FavoriteProductsScreenState extends State<FavoriteProductsScreen> {
           const SizedBox(height: 10),
           const Text(
             'Descubra Mais',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: Color(0xFF291715),
               fontWeight: FontWeight.w700,
@@ -247,24 +268,29 @@ class _FavoriteProductsScreenState extends State<FavoriteProductsScreen> {
           TextButton(
             onPressed: _goToCategories,
             style: TextButton.styleFrom(padding: EdgeInsets.zero),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Ver Categorias',
-                  style: TextStyle(
-                    color: Color(0xFFB90014),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
+            child: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Ver Categorias',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Color(0xFFB90014),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-                SizedBox(width: 2),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: Color(0xFFB90014),
-                  size: 14,
-                ),
-              ],
+                  SizedBox(width: 2),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFFB90014),
+                    size: 14,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -407,6 +433,8 @@ class _ProductCard extends StatelessWidget {
             ),
             child: Text(
               product.category,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
@@ -430,6 +458,8 @@ class _ProductCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             product.price,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 23,
               fontWeight: FontWeight.w900,
@@ -476,12 +506,15 @@ class _ProductCard extends StatelessWidget {
               ),
               label: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 220),
-                child: Text(
-                  isLoadingAddToCart ? 'Adicionado' : 'Adicionar',
+                child: FittedBox(
                   key: ValueKey(isLoadingAddToCart),
-                  style: TextStyle(
-                    color: suggested ? const Color(0xFFE30613) : Colors.white,
-                    fontWeight: FontWeight.w800,
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    isLoadingAddToCart ? 'Adicionado' : 'Adicionar',
+                    style: TextStyle(
+                      color: suggested ? const Color(0xFFE30613) : Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),

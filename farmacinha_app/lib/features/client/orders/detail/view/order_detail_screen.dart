@@ -44,6 +44,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ),
         title: Text(
           order.id,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: Pallete.primaryRed,
             fontWeight: FontWeight.bold,
@@ -81,11 +83,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           color: Pallete.textColor,
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          'Previsão: ${viewModel.formattedEstimatedDelivery}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Pallete.textColor,
+                        Expanded(
+                          child: Text(
+                            'Previsão: ${viewModel.formattedEstimatedDelivery}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Pallete.textColor,
+                            ),
                           ),
                         ),
                       ],
@@ -118,9 +124,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     ),
                   ),
                   icon: const Icon(Icons.local_shipping_rounded),
-                  label: const Text(
-                    'Rastrear Entrega',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Rastrear Entrega',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
                   ),
                 ),
               ),
@@ -146,20 +156,30 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Total',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Color(0xFF291715),
+                      const Expanded(
+                        child: Text(
+                          'Total',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Color(0xFF291715),
+                          ),
                         ),
                       ),
-                      Text(
-                        viewModel.formattedTotal,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Pallete.primaryRed,
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          viewModel.formattedTotal,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Pallete.primaryRed,
+                          ),
                         ),
                       ),
                     ],
@@ -289,6 +309,8 @@ class _OrderItemRow extends StatelessWidget {
               children: [
                 Text(
                   item.productName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
@@ -297,6 +319,8 @@ class _OrderItemRow extends StatelessWidget {
                 ),
                 Text(
                   '${item.quantity}x  R\$ ${item.unitPrice.toStringAsFixed(2).replaceAll('.', ',')}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 12,
                     color: Pallete.textColor,
@@ -305,12 +329,18 @@ class _OrderItemRow extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            'R\$ ${item.subtotal.toStringAsFixed(2).replaceAll('.', ',')}',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: Color(0xFF291715),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              'R\$ ${item.subtotal.toStringAsFixed(2).replaceAll('.', ',')}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Color(0xFF291715),
+              ),
             ),
           ),
         ],
@@ -347,6 +377,8 @@ class _DetailRow extends StatelessWidget {
               ),
               Text(
                 value,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,

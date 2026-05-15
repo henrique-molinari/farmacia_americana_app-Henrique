@@ -43,7 +43,11 @@ class CustomBottomNavBar extends StatelessWidget {
       // Estilo do texto da aba selecionada
       selectedLabelStyle: const TextStyle(
         fontWeight: FontWeight.bold,
-        fontSize: 12,
+        fontSize: 11,
+      ),
+      unselectedLabelStyle: const TextStyle(
+        fontWeight: FontWeight.w600,
+        fontSize: 10,
       ),
 
       // Lista de itens (botões) da barra. Removido o item 'Buscar' para evitar duplicidade.

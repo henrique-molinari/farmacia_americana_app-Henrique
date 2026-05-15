@@ -129,6 +129,8 @@ class PromoBanner extends StatelessWidget {
                             ),
                             child: Text(
                               subtitle!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -161,28 +163,34 @@ class PromoBanner extends StatelessWidget {
                     children: [
                       // Badge de desconto
                       if (discountPercentage != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Pallete.actionButton,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'ATÉ $discountPercentage%\nDE DESCONTO',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 50, 50, 50),
-                              height: 1.1,
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Pallete.actionButton,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'ATÉ $discountPercentage%\nDE DESCONTO',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color.fromARGB(255, 50, 50, 50),
+                                  height: 1.1,
+                                ),
+                              ),
                             ),
                           ),
                         ),
 
                       // Botão CTA
+                      const SizedBox(width: 8),
                       GestureDetector(
                         onTap: onCtaTapped,
                         child: Container(
@@ -201,12 +209,17 @@ class PromoBanner extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: Text(
-                            ctaText,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Color.fromARGB(255, 50, 50, 50),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              ctaText,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Color.fromARGB(255, 50, 50, 50),
+                              ),
                             ),
                           ),
                         ),

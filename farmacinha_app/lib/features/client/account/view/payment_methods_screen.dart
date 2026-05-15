@@ -44,6 +44,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         titleSpacing: 0,
         title: const Text(
           'Métodos de Pagamento',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: Pallete.primaryRed,
             fontWeight: FontWeight.bold,
@@ -75,8 +77,16 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
           final primaryMethod = viewModel.primaryMethod;
           final savedMethods = viewModel.savedMethods;
 
+          final horizontalPadding =
+              MediaQuery.of(context).size.width < 360 ? 16.0 : 22.0;
+
           return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(22, 10, 22, 32),
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              10,
+              horizontalPadding,
+              32,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -133,6 +143,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
             right: 0,
             child: Text(
               'Gerencie seus cartões e formas de pagamento com segurança clínica.',
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: _paymentCardText,
                 fontSize: 18,
@@ -197,6 +209,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                   ],
                 ),
               ),
+              const SizedBox(width: 12),
               const Spacer(),
               Container(
                 width: 44,
@@ -249,10 +262,12 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              _CardInfoBlock(
-                label: 'VALIDADE',
-                value: method.expiryDate,
-                alignEnd: true,
+              Flexible(
+                child: _CardInfoBlock(
+                  label: 'VALIDADE',
+                  value: method.expiryDate,
+                  alignEnd: true,
+                ),
               ),
             ],
           ),
@@ -275,13 +290,18 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
             ),
           ),
         ),
-        Text(
-          savedMethodsLabel,
-          style: const TextStyle(
-            color: Pallete.primaryRed,
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.6,
+        Flexible(
+          child: Text(
+            savedMethodsLabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: Pallete.primaryRed,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+            ),
           ),
         ),
       ],
@@ -311,12 +331,15 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         ),
         child: const Icon(Icons.add, color: Colors.white, size: 18),
       ),
-      label: const Text(
-        'Adicionar novo cartão',
-        style: TextStyle(
-          color: _paymentMutedText,
-          fontSize: 19,
-          fontWeight: FontWeight.w700,
+      label: const FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          'Adicionar novo cartão',
+          style: TextStyle(
+            color: _paymentMutedText,
+            fontSize: 19,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
@@ -326,21 +349,24 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     return const Center(
       child: Column(
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.lock, size: 18, color: _paymentSubtleText),
-              SizedBox(width: 10),
-              Text(
-                'AMBIENTE 100% SEGURO',
-                style: TextStyle(
-                  color: _paymentSubtleText,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.lock, size: 18, color: _paymentSubtleText),
+                SizedBox(width: 10),
+                Text(
+                  'AMBIENTE 100% SEGURO',
+                  style: TextStyle(
+                    color: _paymentSubtleText,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           SizedBox(height: 16),
           SizedBox(
@@ -417,6 +443,8 @@ class _CardInfoBlock extends StatelessWidget {
       children: [
         Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: _paymentMutedText,
             fontSize: 11,
@@ -426,6 +454,9 @@ class _CardInfoBlock extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: alignEnd ? TextAlign.right : TextAlign.left,
           style: const TextStyle(
             color: _paymentCardText,
             fontSize: 16,
@@ -480,6 +511,8 @@ class _SavedMethodTile extends StatelessWidget {
               children: [
                 Text(
                   method.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: _paymentCardText,
                     fontSize: 17,
@@ -489,6 +522,8 @@ class _SavedMethodTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   method.subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: _paymentMutedText,
                     fontSize: 14,

@@ -32,28 +32,31 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       title: GestureDetector(
         onTap: onLogoTap,
-        child: RichText(
-          text: const TextSpan(
-            children: [
-              TextSpan(
-                text: 'Farmácia ',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  fontStyle: FontStyle.italic,
-                  color: Pallete.primaryRed,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: RichText(
+            text: const TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Farmácia ',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    fontStyle: FontStyle.italic,
+                    color: Pallete.primaryRed,
+                  ),
                 ),
-              ),
-              TextSpan(
-                text: 'Americana',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  fontStyle: FontStyle.italic,
-                  color: Pallete.accentYellow,
+                TextSpan(
+                  text: 'Americana',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    fontStyle: FontStyle.italic,
+                    color: Pallete.accentYellow,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

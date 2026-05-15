@@ -71,7 +71,7 @@ class AttendantChatDetailViewModel extends ChangeNotifier {
           initials: conversation.clientInitials,
           name: conversation.clientName,
           cpf: conversation.clientCpf.isEmpty
-              ? 'CPF nao informado'
+              ? 'CPF não informado'
               : conversation.clientCpf,
           timeLabel: '',
           preview: conversation.lastMessagePreview,

@@ -118,7 +118,7 @@ class PersonalDataViewModel extends ChangeNotifier {
     } on AuthException catch (error) {
       return _formatAuthError(error.message);
     } on PostgrestException catch (error) {
-      return 'Nao foi possivel salvar no banco. Detalhe: ${error.message}';
+      return 'Não foi possível salvar no banco. Detalhe: ${error.message}';
     } catch (error) {
       return error.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -129,7 +129,7 @@ class PersonalDataViewModel extends ChangeNotifier {
 
   Future<PasswordSaveResult> saveNewPassword() async {
     if (_isSavingPassword) {
-      return const PasswordSaveResult(message: 'Alteracao em andamento.');
+      return const PasswordSaveResult(message: 'Alteração em andamento.');
     }
 
     if (currentPasswordController.text.isEmpty) {
@@ -142,7 +142,7 @@ class PersonalDataViewModel extends ChangeNotifier {
 
     if (newPasswordController.text != confirmPasswordController.text) {
       return const PasswordSaveResult(
-        message: 'A confirmacao da senha nao confere.',
+        message: 'A confirmação da senha não confere.',
       );
     }
 
@@ -213,7 +213,7 @@ class PersonalDataViewModel extends ChangeNotifier {
 
     if (lowerMessage.contains('email not confirmed') ||
         lowerMessage.contains('confirm')) {
-      return 'O Supabase pode pedir confirmacao para trocar o e-mail. Verifique a caixa de entrada.';
+      return 'O Supabase pode pedir confirmação para trocar o e-mail. Verifique a caixa de entrada.';
     }
 
     if (lowerMessage.contains('already registered') ||
@@ -221,7 +221,7 @@ class PersonalDataViewModel extends ChangeNotifier {
       return 'Este e-mail ja esta em uso por outra conta.';
     }
 
-    return 'Nao foi possivel atualizar seus dados. Detalhe: $message';
+    return 'Não foi possível atualizar seus dados. Detalhe: $message';
   }
 
   String _formatPasswordAuthError(AuthException error) {
@@ -236,7 +236,7 @@ class PersonalDataViewModel extends ChangeNotifier {
       return 'O Supabase recusou essa senha. Verifique o tamanho minimo configurado no painel.';
     }
 
-    return 'Nao foi possivel alterar a senha. Detalhe: ${error.message}';
+    return 'Não foi possível alterar a senha. Detalhe: ${error.message}';
   }
 
   @override

@@ -35,8 +35,8 @@ class _AttendantNotificationsScreenState
             timeLabel: _timeLabel(message.createdAt),
             title: 'Cliente ${message.clientName} quer atendimento',
             description: message.isUrgent
-                ? 'Solicitacao urgente para falar com atendente agora.'
-                : 'Solicitacao para falar com atendente agora.',
+                ? 'Solicitação urgente para falar com atendente agora.'
+                : 'Solicitação para falar com atendente agora.',
             actionLabel: 'Abrir chat',
             chatId: message.clientId,
           ),
@@ -127,7 +127,7 @@ class _AttendantNotificationsScreenState
                       padding: EdgeInsets.symmetric(vertical: 32),
                       child: Center(
                         child: Text(
-                          'Nao foi possivel carregar as notificacoes.',
+                          'Não foi possível carregar as notificações.',
                         ),
                       ),
                     )

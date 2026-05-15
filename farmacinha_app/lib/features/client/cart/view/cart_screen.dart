@@ -35,6 +35,9 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final horizontalPadding =
+        MediaQuery.of(context).size.width < 360 ? 16.0 : 24.0;
+
     return Scaffold(
       backgroundColor: _cartBg,
       appBar: AppBar(
@@ -68,7 +71,12 @@ class _CartScreenState extends State<CartScreen> {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              8,
+              horizontalPadding,
+              24,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -217,41 +225,44 @@ class _CartScreenState extends State<CartScreen> {
             children: [
               Icon(Icons.confirmation_number_rounded, color: _cartOlive),
               SizedBox(width: 10),
-              Text(
-                'Cupom de Desconto',
-                style: TextStyle(
-                  color: _cartText,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
+              Expanded(
+                child: Text(
+                  'Cupom de Desconto',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _cartText,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _couponController,
-                  textCapitalization: TextCapitalization.characters,
-                  decoration: InputDecoration(
-                    hintText: 'Digite seu cupom',
-                    filled: true,
-                    fillColor: _cartWhite,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 16,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
-                    ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 340;
+              final field = TextField(
+                controller: _couponController,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  hintText: 'Digite seu cupom',
+                  filled: true,
+                  fillColor: _cartWhite,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide.none,
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              SizedBox(
+              );
+              final button = SizedBox(
                 height: 56,
+                width: compact ? double.infinity : null,
                 child: ElevatedButton(
                   onPressed: () {
                     final message = viewModel.applyCoupon(_couponController.text);
@@ -269,17 +280,44 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                   ),
-                  child: const Text(
-                    'Aplicar',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  child: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Aplicar',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              );
+
+              if (compact) {
+                return Column(
+                  children: [
+                    field,
+                    const SizedBox(height: 12),
+                    button,
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: field),
+                  const SizedBox(width: 12),
+                  button,
+                ],
+              );
+            },
           ),
           if (viewModel.appliedCouponCode != null) ...[
             const SizedBox(height: 14),
-            Row(
+            Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -295,7 +333,6 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
                 TextButton(
                   onPressed: () {
                     viewModel.removeCoupon();
@@ -368,20 +405,31 @@ class _CartScreenState extends State<CartScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Total',
-                style: TextStyle(
-                  color: _cartText,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
+              const Expanded(
+                child: Text(
+                  'Total',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _cartText,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
-              Text(
-                CartViewModel.formatCurrency(viewModel.total),
-                style: const TextStyle(
-                  color: Pallete.primaryRed,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
+              const SizedBox(width: 12),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    CartViewModel.formatCurrency(viewModel.total),
+                    style: const TextStyle(
+                      color: Pallete.primaryRed,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -407,9 +455,12 @@ class _CartScreenState extends State<CartScreen> {
               ),
               iconAlignment: IconAlignment.end,
               icon: const Icon(Icons.arrow_forward_rounded),
-              label: const Text(
-                'Finalizar Compra',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'Finalizar Compra',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                ),
               ),
             ),
           ),
@@ -508,120 +559,134 @@ class _CartItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _cartWhite,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: Container(
-              width: 112,
-              height: 112,
-              color: _cartSoft,
-              child: Image.network(
-                item.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.image_not_supported_outlined,
-                  color: Pallete.textColor,
-                ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 360;
+        final imageSize = compact ? 86.0 : 112.0;
+
+        final image = ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            width: imageSize,
+            height: imageSize,
+            color: _cartSoft,
+            child: Image.network(
+              item.imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.image_not_supported_outlined,
+                color: Pallete.textColor,
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: _cartText,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          height: 1.15,
-                        ),
+        );
+
+        final details = Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _cartText,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        height: 1.15,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: IconButton(
-                        onPressed: onRemove,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          size: 20,
-                          color: Pallete.textColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item.subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _cartMuted,
-                    fontSize: 13,
-                    height: 1.35,
                   ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        CartViewModel.formatCurrency(item.unitPrice),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Pallete.primaryRed,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                        ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: IconButton(
+                      onPressed: onRemove,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 20,
+                        color: Pallete.textColor,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: _QuantityStepper(
-                          quantity: item.quantity,
-                          onAdd: onIncrement,
-                          onRemove: onDecrement,
-                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item.subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: _cartMuted,
+                  fontSize: 13,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 10,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: compact
+                          ? constraints.maxWidth - 32
+                          : (constraints.maxWidth - imageSize - 56) / 2,
+                    ),
+                    child: Text(
+                      CartViewModel.formatCurrency(item.unitPrice),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Pallete.primaryRed,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                  _QuantityStepper(
+                    quantity: item.quantity,
+                    onAdd: onIncrement,
+                    onRemove: onDecrement,
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: _cartWhite,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              image,
+              const SizedBox(width: 16),
+              details,
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -755,16 +820,26 @@ class _SummaryRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: _cartMuted, fontSize: 16),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: _cartMuted, fontSize: 16),
+          ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: valueColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],

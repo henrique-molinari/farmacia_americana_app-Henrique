@@ -211,6 +211,8 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
                             children: [
                               Text(
                                 'Pedidos de Atendimento ($notificationsCount)',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontSize: 16,
                                   color: Pallete.primaryRed,
@@ -220,6 +222,8 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
                               const SizedBox(height: 2),
                               const Text(
                                 'Clientes aguardando um atendente.',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Color(0xFFEA5A63),
@@ -271,31 +275,42 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
                           ),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8F8EF),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: const Color(0xFFB6E8CB)),
-                        ),
-                        child: const Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 4,
-                              backgroundColor: Color(0xFF27C281),
+                      Flexible(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
                             ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Sistema\nOnline',
-                              style: TextStyle(
-                                color: Color(0xFF036B44),
-                                fontWeight: FontWeight.w600,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F8EF),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: const Color(0xFFB6E8CB),
                               ),
                             ),
-                          ],
+                            child: const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 4,
+                                    backgroundColor: Color(0xFF27C281),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Sistema\nOnline',
+                                    style: TextStyle(
+                                      color: Color(0xFF036B44),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -350,11 +365,14 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
                         ),
                       ),
                       onPressed: () {},
-                      child: const Text(
-                        'CARREGAR CONVERSAS ANTERIORES',
-                        style: TextStyle(
-                          letterSpacing: 1.2,
-                          fontWeight: FontWeight.w700,
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'CARREGAR CONVERSAS ANTERIORES',
+                          style: TextStyle(
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
@@ -391,6 +409,8 @@ class _HomeAttendantScreenState extends State<HomeAttendantScreen> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Pallete.primaryRed,
         unselectedItemColor: const Color(0xFF94A3B8),
+        selectedFontSize: 11,
+        unselectedFontSize: 10,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'HOME'),
           BottomNavigationBarItem(
