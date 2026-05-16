@@ -40,14 +40,18 @@ class AttendantProductPayload {
 }
 
 class AttendantProductsRepository {
-  AttendantProductsRepository._();
+  AttendantProductsRepository({SupabaseClient? client})
+    : _clientOverride = client;
 
   static final AttendantProductsRepository instance =
-      AttendantProductsRepository._();
+      AttendantProductsRepository();
 
   static const String _productsTable = 'products';
+  static const String _productImagesBucket = 'product-images';
 
-  SupabaseClient get _client => Supabase.instance.client;
+  final SupabaseClient? _clientOverride;
+
+  SupabaseClient get _client => _clientOverride ?? Supabase.instance.client;
 
   Future<List<AttendantStockProduct>> fetchProducts() async {
     final response = await _client
