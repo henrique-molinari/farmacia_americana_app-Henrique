@@ -34,6 +34,7 @@ migrate_working_dir/
 /build/
 /coverage/
 node_modules/
+backend_ai_description/token_usage.json
 
 # Symbolication related
 app.*.symbols

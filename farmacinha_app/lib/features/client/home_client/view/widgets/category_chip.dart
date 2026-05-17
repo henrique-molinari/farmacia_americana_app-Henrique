@@ -2,19 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
 
 class CategoryChip extends StatelessWidget {
-  /// Rótulo da categoria (ex: "Medicamentos", "Higiene", "Beleza")
   final String label;
-
-  /// URL ou ícone da categoria
   final IconData? icon;
-
-  /// Flag se a categoria está selecionada
   final bool isSelected;
-
-  /// Callback ao clicar no chip
   final VoidCallback onTap;
-
-  /// Quantidade de produtos (opcional)
   final int? productCount;
 
   const CategoryChip({
@@ -36,7 +27,7 @@ class CategoryChip extends StatelessWidget {
           vertical: 10,
         ),
         decoration: BoxDecoration(
-          // Fundo: gradiente se selecionado, cinzento se não
+          // Quando a categoria está ativa, deixei ela mais destacada.
           gradient: isSelected
               ? const LinearGradient(
                   colors: [
@@ -70,7 +61,6 @@ class CategoryChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Ícone (se houver)
             if (icon != null) ...[
               Icon(
                 icon,
@@ -82,7 +72,6 @@ class CategoryChip extends StatelessWidget {
               const SizedBox(width: 8),
             ],
 
-            // Rótulo
             Text(
               label,
               style: TextStyle(
@@ -94,7 +83,6 @@ class CategoryChip extends StatelessWidget {
               ),
             ),
 
-            // Quantidade de produtos (se houver)
             if (productCount != null) ...[
               const SizedBox(width: 6),
               Container(

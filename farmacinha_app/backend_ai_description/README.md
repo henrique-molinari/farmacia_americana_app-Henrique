@@ -63,7 +63,47 @@ Resposta:
 
 ```json
 {
-  "descricao": "Descrição gerada."
+  "descricao": "Descrição gerada.",
+  "tokens": {
+    "entrada": 85,
+    "saida": 24,
+    "total": 109
+  },
+  "totalTokens": {
+    "entrada": 850,
+    "saida": 240,
+    "total": 1090,
+    "requisicoes": 10
+  }
+}
+```
+
+Os tokens são lidos dos metadados retornados pelo Ollama:
+
+- `entrada`: tokens usados no prompt enviado para o modelo.
+- `saida`: tokens gerados na resposta.
+- `total`: soma de entrada e saída.
+- `requisicoes`: quantidade de descrições geradas e acumuladas no backend.
+
+O acumulado fica salvo localmente em `token_usage.json`. Esse arquivo é ignorado
+pelo Git para não misturar métricas locais com o código do projeto.
+
+## Consultar uso acumulado
+
+```http
+GET http://localhost:3000/uso-tokens
+```
+
+Resposta:
+
+```json
+{
+  "totalTokens": {
+    "entrada": 850,
+    "saida": 240,
+    "total": 1090,
+    "requisicoes": 10
+  }
 }
 ```
 

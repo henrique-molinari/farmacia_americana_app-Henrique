@@ -4,7 +4,6 @@ import 'package:farmacia_app/core/palette/pallete.dart';
 class SettingsBottomSheet extends StatefulWidget {
   const SettingsBottomSheet({super.key});
 
-  // Método estático para abrir o BottomSheet facilmente em qualquer tela
   static void show(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -19,18 +18,15 @@ class SettingsBottomSheet extends StatefulWidget {
 }
 
 class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
-  // Valor atual do alerta de estoque
   int _stockThreshold = 10;
 
-  // Estado do botão de sincronização
   bool _isSyncing = false;
   String _lastSync = 'Hoje, 10:45';
 
-  // Simula a sincronização de dados
   Future<void> _syncData() async {
     setState(() => _isSyncing = true);
 
-    // Simula um delay de carregamento
+    // Por enquanto é só uma espera para parecer uma sincronização.
     await Future.delayed(const Duration(seconds: 2));
 
     final now = DateTime.now();
@@ -73,7 +69,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Indicador de arrasto
           Container(
             width: 40,
             height: 4,
@@ -85,7 +80,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
 
           const SizedBox(height: 16),
 
-          // Cabeçalho
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: Align(
@@ -104,7 +98,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
 
           const SizedBox(height: 20),
 
-          // ── Alerta de Estoque ───────────────────────────────────────
           _buildSection(
             icon: Icons.inventory_2_outlined,
             iconColor: Pallete.accentYellow,
@@ -112,7 +105,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
             subtitle: 'Notificar quando abaixo de $_stockThreshold unidades',
             child: Row(
               children: [
-                // Botão diminuir
                 _buildThresholdButton(
                   icon: Icons.remove,
                   onTap: () {
@@ -124,7 +116,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
 
                 const SizedBox(width: 16),
 
-                // Valor atual
                 Text(
                   '$_stockThreshold',
                   style: const TextStyle(
@@ -136,7 +127,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
 
                 const SizedBox(width: 16),
 
-                // Botão aumentar
                 _buildThresholdButton(
                   icon: Icons.add,
                   onTap: () {
@@ -151,7 +141,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
 
           const Divider(height: 1, color: Pallete.borderColor, indent: 20, endIndent: 20),
 
-          // ── Atualizar Dados ─────────────────────────────────────────
           _buildSection(
             icon: Icons.sync_rounded,
             iconColor: const Color(0xFF0079B9),
@@ -193,7 +182,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
 
           const Divider(height: 1, color: Pallete.borderColor, indent: 20, endIndent: 20),
 
-          // ── Suporte ─────────────────────────────────────────────────
           _buildSection(
             icon: Icons.support_agent_rounded,
             iconColor: const Color(0xFF10B981),
@@ -216,7 +204,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
 
           const Divider(height: 1, color: Pallete.borderColor, indent: 20, endIndent: 20),
 
-          // ── Versão do App ───────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
@@ -263,7 +250,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
     );
   }
 
-  // Seção genérica com ícone, título, subtítulo e conteúdo
   Widget _buildSection({
     required IconData icon,
     required Color iconColor,
@@ -319,7 +305,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
     );
   }
 
-  // Botão de incremento/decremento do alerta de estoque
   Widget _buildThresholdButton({
     required IconData icon,
     required VoidCallback onTap,
@@ -338,7 +323,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
     );
   }
 
-  // Linha de contato (telefone ou e-mail)
   Widget _buildContactRow({
     required IconData icon,
     required String value,

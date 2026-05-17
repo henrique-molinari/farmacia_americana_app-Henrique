@@ -16,7 +16,6 @@ class ProductDetailViewModel extends ChangeNotifier {
 
   bool get isAdding => _isAdding;
 
-  // Lógica para adicionar ao carrinho com feedback visual
   Future<void> addToCart(BuildContext context) async {
     if (!_authSession.requireAuthentication(
       context,
@@ -25,12 +24,12 @@ class ProductDetailViewModel extends ChangeNotifier {
       return;
     }
 
-    if (_isAdding) return; // Evita cliques duplos enquanto processa
+    if (_isAdding) return;
 
     _isAdding = true;
     notifyListeners();
 
-    // Simula uma pequena espera (delay) como se estivesse enviando para uma API
+    // Simula uma pequena espera de envio.
     await Future.delayed(const Duration(milliseconds: 500));
 
     CartViewModel.instance.addProduct(product);

@@ -5,16 +5,13 @@ import 'package:farmacia_app/core/palette/pallete.dart';
 import '../view_model/product_detail_view_model.dart';
 
 class ProductDetailScreen extends StatelessWidget {
-  // Removido o 'final Product product' como atributo obrigatório do construtor
-  // para permitir que o AppRoutes chame a classe sem parâmetros.
   const ProductDetailScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // CAPTURA DO DADO: Buscamos o objeto Product enviado via Navigator.pushNamed
+    // O produto vem da tela anterior pela rota.
     final product = ModalRoute.of(context)!.settings.arguments as Product;
 
-    // Seguindo seu padrão: Injetamos a ViewModel e passamos o produto para ela
     return ChangeNotifierProvider(
       create: (_) => ProductDetailViewModel(product: product),
       child: Consumer<ProductDetailViewModel>(
@@ -35,7 +32,6 @@ class ProductDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Imagem do Produto
                   AspectRatio(
                     aspectRatio: 1.25,
                     child: Padding(
@@ -59,7 +55,6 @@ class ProductDetailScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Badge de Promoção
                         if (product.isOnPromotion)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -113,7 +108,6 @@ class ProductDetailScreen extends StatelessWidget {
 
                         const SizedBox(height: 25),
 
-                        // BOTÕES DE AÇÃO
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFFDE8E8), 
@@ -148,7 +142,6 @@ class ProductDetailScreen extends StatelessWidget {
 
                         const SizedBox(height: 30),
 
-                        // DESCRIÇÃO DO PRODUTO
                         const Text(
                           "Descrição",
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
