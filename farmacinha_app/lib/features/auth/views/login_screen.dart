@@ -14,12 +14,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Instanciando a ViewModel que gerencia os controllers e a lógica de login
   final LoginViewModel viewModel = LoginViewModel();
 
   @override
   void dispose() {
-    // IMPORTANTE: Liberar a memória dos controllers ao fechar a tela
+    // Fecha os controllers quando sair da tela.
     viewModel.dispose();
     super.dispose();
   }
@@ -53,21 +52,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 50),
 
-                  // Campo de Email vinculado ao controller da ViewModel
                   LoginField(
                     hintText: 'Email',
                     controller: viewModel.emailController,
                   ),
                   const SizedBox(height: 16),
 
-                  // Campo de Senha com controle de visibilidade
                   PasswordField(
                     controller: viewModel.passwordController,
                     obscureText: viewModel.obscurePassword,
                     onToggleVisibility: viewModel.togglePasswordVisibility,
                   ),
 
-                  // Seção "Salvar Login"
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 35),
                     child: Row(
@@ -101,7 +97,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 30),
 
-                  // Botão de Login chamando o método com o context
                   GradientButton(
                     onPressed: viewModel.isLoading
                         ? null
@@ -118,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Botões Sociais (Apenas UI por enquanto)
+                  // Esses botões ainda estão só com ação de teste.
                   SocialButton(
                     iconName: 'g_logo',
                     label: 'Entrar com Google',

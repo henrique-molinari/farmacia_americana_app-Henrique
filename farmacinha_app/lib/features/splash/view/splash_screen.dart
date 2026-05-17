@@ -13,14 +13,13 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  // Instância da ViewModel
   final SplashViewModel _viewModel = SplashViewModel();
 
   @override
   void initState() {
     super.initState();
 
-    // Configuração da animação (Parte da UI)
+    // Animação simples para a logo aparecer mais suave.
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -32,7 +31,6 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animationController.forward();
 
-    // Aciona a lógica de inicialização da ViewModel
     _viewModel.initializeApp(context);
   }
 
@@ -58,7 +56,6 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  // Seu método _buildLogo() continua igual abaixo...
   Widget _buildLogo() {
     return Column(
       mainAxisSize: MainAxisSize.min,

@@ -163,8 +163,6 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  // ─── HEADER DO PERFIL ───────────────────────────────────────────────────────
-
   Widget _buildProfileHeader() {
     final user = viewModel.currentUser;
 
@@ -183,7 +181,6 @@ class _AccountScreenState extends State<AccountScreen> {
       ),
       child: Row(
         children: [
-          // Avatar com botão de editar
           Stack(
             children: [
               Container(
@@ -230,7 +227,6 @@ class _AccountScreenState extends State<AccountScreen> {
 
           const SizedBox(width: 16),
 
-          // Nome, email e badge
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,8 +280,6 @@ class _AccountScreenState extends State<AccountScreen> {
       ),
     );
   }
-
-  // ─── GRID DE MENU ───────────────────────────────────────────────────────────
 
   Widget _buildMenuGrid() {
     final tiles = [
@@ -383,8 +377,6 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  // ─── DIALOG DE LOGOUT ───────────────────────────────────────────────────────
-
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -422,8 +414,6 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 }
-
-// ─── WIDGETS AUXILIARES ───────────────────────────────────────────────────────
 
 class _MenuTile extends StatefulWidget {
   final IconData icon;

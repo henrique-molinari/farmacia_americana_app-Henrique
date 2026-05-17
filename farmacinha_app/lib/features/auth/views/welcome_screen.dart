@@ -5,7 +5,6 @@ import 'package:farmacia_app/features/auth/view_models/welcome_view_model.dart';
 class WelcomeScreen extends StatelessWidget {
   WelcomeScreen({super.key});
 
-  // Instanciando a ViewModel
   final WelcomeViewModel viewModel = WelcomeViewModel();
 
   @override

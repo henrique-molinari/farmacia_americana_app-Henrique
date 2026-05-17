@@ -2,31 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
 
 class ProductCard extends StatelessWidget {
-  // URL ou path da imagem do produto
   final String imageUrl;
-
-  // Nome do produto
   final String productName;
-
-  // Preço do produto em reais
   final double price;
-
-  // Avaliação do produto (0 a 5 estrelas)
   final double rating;
-
-  // Quantidade de avaliações
   final int reviewCount;
-
-  // Flag se o produto está em promoção
   final bool isOnPromotion;
-
-  // Desconto em percentual (ex: 20 para 20%)
   final int? discountPercentage;
-
-  // Callback ao clicar no card
   final VoidCallback onTap;
-
-  // Callback ao clicar no botão de adicionar ao carrinho
   final VoidCallback onAddToCart;
 
   const ProductCard({
@@ -68,10 +51,8 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ===== IMAGEM + BADGE DE PROMOÇÃO =====
             Stack(
               children: [
-                // Imagem do produto
                 Container(
                   width: double.infinity,
                   height: isMobile ? 140 : 180,
@@ -118,7 +99,6 @@ class ProductCard extends StatelessWidget {
                   ),
                 ),
 
-                // Badge de Promoção
                 if (isOnPromotion && discountPercentage != null)
                   Positioned(
                     top: 8,
@@ -145,14 +125,12 @@ class ProductCard extends StatelessWidget {
               ],
             ),
 
-            // ===== INFORMAÇÕES DO PRODUTO =====
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Nome do Produto
                     Text(
                       productName,
                       maxLines: 2,
@@ -166,10 +144,9 @@ class ProductCard extends StatelessWidget {
 
                     const SizedBox(height: 8),
 
-                    // Avaliação (Estrelas)
+                    // Mostra a nota usando estrelas.
                     Row(
                       children: [
-                        // Estrelas
                         Flexible(
                           child: SizedBox(
                             height: 16,
@@ -195,7 +172,6 @@ class ProductCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        // Quantidade de avaliações
                         Flexible(
                           child: Text(
                             '($reviewCount)',
@@ -212,7 +188,6 @@ class ProductCard extends StatelessWidget {
 
                     const Spacer(),
 
-                    // Preço
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -220,7 +195,6 @@ class ProductCard extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Preço original (se houver desconto)
                               if (isOnPromotion && discountPercentage != null)
                                 Text(
                                   'R\$ ${price.toStringAsFixed(2)}',
@@ -233,7 +207,6 @@ class ProductCard extends StatelessWidget {
                                   ),
                                 ),
 
-                              // Preço atual
                               Text(
                                 isOnPromotion && discountPercentage != null
                                     ? 'R\$ ${(price * (1 - discountPercentage! / 100)).toStringAsFixed(2)}'
@@ -250,7 +223,6 @@ class ProductCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // Botão de adicionar ao carrinho
                         GestureDetector(
                           onTap: onAddToCart,
                           child: Container(

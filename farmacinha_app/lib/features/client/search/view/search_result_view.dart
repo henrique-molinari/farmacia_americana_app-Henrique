@@ -5,22 +5,19 @@ import '../view_model/search_result_view_model.dart';
 import 'package:farmacia_app/features/client/widgets/custom_app_bar.dart';
 import 'package:farmacia_app/features/client/widgets/custom_bottom_nav_bar.dart';
 import 'package:farmacia_app/features/client/home_client/view/widgets/product_card.dart';
-// import 'package:farmacia_app/features/client/home_client/data/models/product_model.dart';
 
 class SearchResultScreen extends StatelessWidget {
   final String? query;
 
-  // O construtor agora é opcional para que o AppRoutes funcione sem erros
   const SearchResultScreen({super.key, this.query});
 
   @override
   Widget build(BuildContext context) {
-    // LÓGICA DE CAPTURA: Se a query não veio pelo construtor, pegamos dos argumentos da rota
+    // Se a busca veio pela rota, pego o texto dos argumentos.
     final String effectiveQuery =
         query ?? ModalRoute.of(context)!.settings.arguments as String;
 
     return ChangeNotifierProvider(
-      // Injetamos a query na ViewModel para ela já iniciar a busca
       create: (_) => SearchResultViewModel(initialQuery: effectiveQuery),
       child: Scaffold(
         appBar: CustomAppBar(
@@ -31,12 +28,10 @@ class SearchResultScreen extends StatelessWidget {
         ),
         body: Consumer<SearchResultViewModel>(
           builder: (context, viewModel, child) {
-            // Estado de carregamento
             if (viewModel.isLoading) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            // Caso a busca não retorne nada
             if (viewModel.filteredProducts.isEmpty) {
               return _buildEmptyState();
             }
@@ -55,7 +50,6 @@ class SearchResultScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Grid de Produtos Filtrados
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -78,7 +72,6 @@ class SearchResultScreen extends StatelessWidget {
                         isOnPromotion: product.isOnPromotion,
                         discountPercentage: product.discountPercentage,
                         onTap: () {
-                          // Navegação correta usando a constante da sua AppRoutes
                           Navigator.pushNamed(
                             context,
                             AppRoutes.productDetail,

@@ -1,5 +1,3 @@
-// attendant_search_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:farmacia_app/app/app_routes.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
