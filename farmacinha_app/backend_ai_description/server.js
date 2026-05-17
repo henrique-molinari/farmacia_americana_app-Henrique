@@ -23,6 +23,86 @@ Regras:
 - Retorne apenas a descrição, sem aspas e sem listas.
 `;
 
+const buildSearchPrompt = (query, products) => `
+Voce e uma IA de busca para um aplicativo de farmacia.
+
+Consulta do cliente: ${query}
+
+Produtos disponiveis:
+${JSON.stringify(products, null, 2)}
+
+Tarefa:
+- Entenda a intencao da busca, inclusive sintomas simples, termos populares e erros de digitacao.
+- Escolha apenas produtos da lista fornecida.
+- Priorize produtos cujo nome, categoria ou descricao tenham relacao clara com a consulta.
+- Para "febre", priorize apenas produtos com relacao clara a antitermico, dipirona, paracetamol, ibuprofeno ou febre.
+- Para "dor de cabeca", priorize apenas produtos com relacao clara a analgesico, dipirona, paracetamol, ibuprofeno ou dor.
+- Para "azia", "queimacao" ou "refluxo", priorize apenas produtos com relacao clara a estomago, refluxo, azia, omeprazol ou pantoprazol.
+- Para "alergia" ou "rinite", priorize apenas produtos com relacao clara a antialergico, loratadina, desloratadina ou cetirizina.
+- Para "enjoo", "nausea" ou "vomito", priorize apenas produtos com relacao clara a enjoo, nausea, vomito, dimenidrinato ou dramin.
+- Nao retorne anticoncepcional, antialergico, enjoo, nausea, vitaminas, cosmeticos ou higiene quando a consulta for febre ou dor de cabeca, a menos que a consulta cite isso explicitamente.
+- Nao retorne produtos apenas porque sao remedios. A relacao precisa ser com o problema pesquisado.
+- Ignore palavras genericas da consulta como remedio, remedios, pra, para, quero, preciso, algo e tomar.
+- Nao use apenas a categoria "medicamentos" como motivo para incluir um produto.
+- Nao invente produtos, diagnosticos, tratamentos ou promessas de cura.
+- Se nao houver relacao clara, retorne ids vazio.
+- Retorne no maximo 12 ids, em ordem de relevancia.
+
+Responda somente um JSON valido neste formato:
+{
+  "ids": ["id-do-produto"],
+  "termos": ["termo relacionado"],
+  "categorias": ["categoria relacionada"]
+}
+`;
+
+const parseJsonFromAiResponse = (text) => {
+  const rawText = String(text || "")
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+
+  try {
+    const parsed = JSON.parse(rawText);
+    if (parsed?.ids || parsed?.productIds) {
+      return parsed;
+    }
+  } catch (_) {
+  }
+
+  for (let startIndex = 0; startIndex < rawText.length; startIndex += 1) {
+    if (rawText[startIndex] !== "{") {
+      continue;
+    }
+
+    let depth = 0;
+
+    for (let endIndex = startIndex; endIndex < rawText.length; endIndex += 1) {
+      if (rawText[endIndex] === "{") {
+        depth += 1;
+      }
+
+      if (rawText[endIndex] === "}") {
+        depth -= 1;
+      }
+
+      if (depth === 0) {
+        try {
+          const parsed = JSON.parse(rawText.slice(startIndex, endIndex + 1));
+          if (parsed?.ids || parsed?.productIds) {
+            return parsed;
+          }
+        } catch (_) {
+        }
+
+        break;
+      }
+    }
+  }
+
+  return null;
+};
+
 app.post("/gerar-descricao", async (req, res) => {
   try {
     const nomeProduto = String(req.body?.nomeProduto || "").trim();
@@ -61,6 +141,97 @@ app.post("/gerar-descricao", async (req, res) => {
 
     return res.status(500).json({
       erro: "Erro ao gerar descrição.",
+    });
+  }
+});
+
+app.post("/buscar-produtos-inteligente", async (req, res) => {
+  try {
+    const consulta = String(req.body?.consulta || "").trim();
+    const produtosRecebidos = Array.isArray(req.body?.produtos)
+      ? req.body.produtos
+      : [];
+
+    if (!consulta) {
+      return res.status(400).json({
+        erro: "Consulta invalida.",
+      });
+    }
+
+    if (produtosRecebidos.length === 0) {
+      return res.status(400).json({
+        erro: "Lista de produtos invalida.",
+      });
+    }
+
+    const produtos = produtosRecebidos
+      .map((produto) => ({
+        id: String(produto?.id || "").trim(),
+        nome: String(produto?.nome || "").trim(),
+        categoria: String(produto?.categoria || "").trim(),
+        descricao: String(produto?.descricao || "").trim(),
+      }))
+      .filter((produto) => produto.id && produto.nome)
+      .slice(0, 80);
+
+    if (produtos.length === 0) {
+      return res.status(400).json({
+        erro: "Nenhum produto valido recebido.",
+      });
+    }
+
+    const idsPermitidos = new Set(produtos.map((produto) => produto.id));
+
+    const resposta = await axios.post(
+      "http://localhost:11434/api/generate",
+      {
+        model: "llama3.2",
+        prompt: buildSearchPrompt(consulta, produtos),
+        stream: false,
+      },
+      {
+        timeout: 30000,
+      }
+    );
+
+    const resultado = parseJsonFromAiResponse(resposta.data?.response);
+
+    if (!resultado) {
+      return res.status(500).json({
+        erro: "A IA nao retornou uma busca valida.",
+      });
+    }
+
+    const ids = (Array.isArray(resultado.ids)
+      ? resultado.ids
+      : Array.isArray(resultado.productIds)
+      ? resultado.productIds
+      : []
+    )
+      .map((id) => String(id).trim())
+      .filter((id) => idsPermitidos.has(id))
+      .slice(0, 12);
+
+    const termos = Array.isArray(resultado.termos)
+      ? resultado.termos.map((termo) => String(termo).trim()).filter(Boolean)
+      : [];
+
+    const categorias = Array.isArray(resultado.categorias)
+      ? resultado.categorias
+          .map((categoria) => String(categoria).trim())
+          .filter(Boolean)
+      : [];
+
+    return res.json({
+      ids,
+      termos,
+      categorias,
+    });
+  } catch (error) {
+    console.error("Erro na busca inteligente:", error.message);
+
+    return res.status(500).json({
+      erro: "Erro ao buscar produtos com IA.",
     });
   }
 });
