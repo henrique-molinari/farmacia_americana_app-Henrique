@@ -2,31 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
 
 class PromoBanner extends StatelessWidget {
-  /// Título principal da promoção
   final String title;
-
-  /// Subtítulo ou descrição da promoção
   final String? subtitle;
-
-  /// Percentual de desconto (ex: 50)
   final int? discountPercentage;
-
-  /// Texto do botão CTA
   final String ctaText;
-
-  /// URL da imagem de fundo ou ícone
   final String? backgroundImageUrl;
-
-  /// Ícone decorativo (alternativa a image)
   final IconData? icon;
-
-  /// Cor de fundo primária (se não usar imagem)
   final Color? backgroundColor;
-
-  /// Callback ao clicar no banner
   final VoidCallback? onTap;
-
-  /// Callback ao clicar no botão
   final VoidCallback? onCtaTapped;
 
   const PromoBanner({
@@ -56,7 +39,6 @@ class PromoBanner extends StatelessWidget {
           vertical: 12,
         ),
         decoration: BoxDecoration(
-          // Imagem de fundo (se houver)
           image: backgroundImageUrl != null
               ? DecorationImage(
                   image: NetworkImage(backgroundImageUrl!),
@@ -67,7 +49,7 @@ class PromoBanner extends StatelessWidget {
                   ),
                 )
               : null,
-          // Gradiente como fallback
+          // Se não vier imagem, uso um fundo em gradiente.
           gradient: backgroundImageUrl == null
               ? LinearGradient(
                   colors: [
@@ -91,7 +73,6 @@ class PromoBanner extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Ícone decorativo no canto (fundo)
             if (icon != null)
               Positioned(
                 right: -30,
@@ -101,22 +82,19 @@ class PromoBanner extends StatelessWidget {
                   size: 150,
                   color: Colors.white,
                 ),
-              ),
+            ),
 
-            // Conteúdo principal
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Espaço para layout flexível
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        // Subtítulo/Tag
                         if (subtitle != null)
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -141,7 +119,6 @@ class PromoBanner extends StatelessWidget {
 
                         const SizedBox(height: 8),
 
-                        // Título principal
                         Text(
                           title,
                           style: TextStyle(
@@ -157,11 +134,9 @@ class PromoBanner extends StatelessWidget {
                     ),
                   ),
 
-                  // Footer com desconto e botão
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Badge de desconto
                       if (discountPercentage != null)
                         Flexible(
                           child: Container(
@@ -189,7 +164,6 @@ class PromoBanner extends StatelessWidget {
                           ),
                         ),
 
-                      // Botão CTA
                       const SizedBox(width: 8),
                       GestureDetector(
                         onTap: onCtaTapped,

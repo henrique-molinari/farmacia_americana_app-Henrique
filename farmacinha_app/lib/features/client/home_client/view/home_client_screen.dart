@@ -147,15 +147,13 @@ class _HomeClientScreenState extends State<HomeClientScreen> {
                     ),
                   ),
 
-                  // CORREÇÃO 1: Categoria agora navega para SearchResultScreen
                   CategoryGrid(
                     categories: viewModel.categories,
                     onCategoryTap: (categoryName) {
                       Navigator.pushNamed(
                         context,
                         AppRoutes.searchResult,
-                        arguments:
-                            categoryName, // Passa o nome da categoria para a busca
+                        arguments: categoryName,
                       );
                     },
                   ),
@@ -197,7 +195,6 @@ class _HomeClientScreenState extends State<HomeClientScreen> {
         ),
         child: TextField(
           controller: viewModel.searchController,
-          // CORREÇÃO 2: Pesquisa agora navega ao apertar "Enter"
           onSubmitted: (value) {
             if (value.isNotEmpty) {
               Navigator.pushNamed(

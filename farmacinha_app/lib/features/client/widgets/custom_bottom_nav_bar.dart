@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:farmacia_app/core/palette/pallete.dart';
 
-/// Um widget customizado de navegação inferior para o fluxo do cliente.
-/// Seguindo a POO, ele é um Stateless porque apenas exibe dados e repassa eventos.
 class CustomBottomNavBar extends StatelessWidget {
-  /// O índice da aba que está selecionada no momento (0 a 3).
   final int currentIndex;
-  
-  /// Função de callback disparada quando o usuário toca em um ícone.
-  /// Isso permite que a tela pai decida para onde navegar.
   final Function(int) onTap;
 
   const CustomBottomNavBar({
@@ -20,27 +14,15 @@ class CustomBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      // Define qual ícone aparecerá como "aceso" (selecionado)
       currentIndex: currentIndex,
-      
-      // Repassa o índice clicado para a função que recebemos no construtor
       onTap: onTap,
-      
-      // 'fixed' garante que os ícones fiquem parados e as labels (textos) sempre apareçam
+      // Deixa os itens fixos mesmo tendo mais de três opções.
       type: BottomNavigationBarType.fixed,
       
       backgroundColor: Pallete.whiteColor,
-      
-      // Adiciona uma leve sombra acima da barra para separá-la do conteúdo (body)
       elevation: 8,
-      
-      // Cor do ícone e do texto quando a aba está ativa
       selectedItemColor: Pallete.primaryRed,
-      
-      // Cor do ícone e do texto quando a aba NÃO está ativa
       unselectedItemColor: Pallete.textColor,
-      
-      // Estilo do texto da aba selecionada
       selectedLabelStyle: const TextStyle(
         fontWeight: FontWeight.bold,
         fontSize: 11,
@@ -50,11 +32,10 @@ class CustomBottomNavBar extends StatelessWidget {
         fontSize: 10,
       ),
 
-      // Lista de itens (botões) da barra. Removido o item 'Buscar' para evitar duplicidade.
       items: const [
         BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),    // Ícone de linha (vazado) para estado inativo
-          activeIcon: Icon(Icons.home_rounded), // Ícone preenchido para estado ativo
+          icon: Icon(Icons.home_outlined),
+          activeIcon: Icon(Icons.home_rounded),
           label: 'Início',
         ),
         BottomNavigationBarItem(

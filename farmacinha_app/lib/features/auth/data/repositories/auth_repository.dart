@@ -121,7 +121,7 @@ class AuthRepository {
       try {
         await _client.auth.refreshSession();
       } catch (_) {
-        // The profile was already updated; a fresh login will pick up the email.
+        // O perfil já foi salvo, então o login novo pega o e-mail certo.
       }
 
       return User.fromProfileMap(Map<String, dynamic>.from(updatedProfile));

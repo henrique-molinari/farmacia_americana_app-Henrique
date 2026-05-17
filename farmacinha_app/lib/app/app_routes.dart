@@ -16,7 +16,6 @@ import 'package:farmacia_app/features/attendant/home_attendant/view/attendant_pr
 import 'package:farmacia_app/features/attendant/home_attendant/view/attendant_security_screen.dart';
 import 'package:farmacia_app/features/attendant/home_attendant/view/attendant_support_screen.dart';
 
-// ── Rotas das features do cliente ──────────────────────────────────────
 import 'package:farmacia_app/features/client/account/view/account_screen.dart';
 import 'package:farmacia_app/features/client/orders/list/view/orders_screen.dart';
 import 'package:farmacia_app/features/client/notifications/view/notifications_screen.dart';
@@ -30,21 +29,19 @@ import 'package:farmacia_app/features/client/cart/view/checkout_screen.dart';
 import 'package:farmacia_app/features/client/chat/view/client_chat_screen.dart';
 import 'package:farmacia_app/features/client/search/view/search_result_view.dart';
 import 'package:farmacia_app/features/client/product_detail/view/product_detail_view.dart';
-// Import necessário para o Cast do argumento
 // ignore: unused_import
-import 'package:farmacia_app/features/client/home_client/data/models/product_model.dart'; // Import necessário para o Cast do argumento
+import 'package:farmacia_app/features/client/home_client/data/models/product_model.dart';
 
-// ── Rotas do Gerente ───────────────────────────────────────────────────────────
 import 'package:farmacia_app/features/manager/manager_shell_screen.dart';
 
 class AppRoutes {
-  // ── Auth ──────────────────────────────────────────────────────────────────
+  // Rotas usadas nas telas de login e cadastro.
   static const String splash = '/';
   static const String welcome = '/welcome';
   static const String login = '/login';
   static const String register = '/register';
 
-  // ── Homes por perfil ──────────────────────────────────────────────────────
+  // Cada perfil entra em uma home diferente.
   static const String homeClient = '/home_client';
   static const String homeAttendant = '/home_attendant';
   static const String attendantSearch = '/attendant_search';
@@ -58,7 +55,7 @@ class AppRoutes {
   static const String attendantSupport = '/attendant_support';
   static const String homeManager = '/home_manager';
 
-  // ── Features do cliente ───────────────────────────────────────────────────
+  // Telas do fluxo do cliente.
   static const String account = '/account';
   static const String orders = '/orders';
   static const String notifications = '/notifications';
